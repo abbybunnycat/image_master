@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>多圖拼貼與尺寸排版大師</title>
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS (Play CDN,適合本機/個人工具使用) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif; }
+        #previewCanvas { max-width: 100%; max-height: 650px; width: auto; height: auto; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
@@ -28,63 +29,64 @@
                 </div>
             </div>
             <div class="flex items-center space-x-2">
-                <button id="resetAllBtn" class="hidden px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
-                    <i class="fa-solid fa-rotate-left mr-1.5"></i>全部重置
+                <button id="resetAllBtn" type="button" class="hidden px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition" title="自由模式:將所有圖片的位置與大小恢復為初始狀態">
+                    <i class="fa-solid fa-rotate-left mr-1.5"></i>重設排版
                 </button>
             </div>
         </div>
     </header>
 
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        <!-- Left Sidebar: Controls & Settings -->
+
+        <!-- Left Sidebar -->
         <div class="lg:col-span-5 space-y-6">
-            
+
             <!-- Canvas Settings Panel -->
             <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-                <h2 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2.5 flex items-center justify-between">
-                    <span><i class="fa-solid fa-sliders text-indigo-600 mr-2"></i>畫布與拼貼設定</span>
+                <h2 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2.5">
+                    <i class="fa-solid fa-sliders text-indigo-600 mr-2"></i>畫布與拼貼設定
                 </h2>
 
                 <!-- Preset Sizes -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">常用尺寸快速套用</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <button type="button" onclick="setPresetCanvas(760, 420)" class="text-left p-2 rounded-xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition text-xs">
+                        <button type="button" data-preset="760x420" class="preset-btn text-left p-2 rounded-xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition text-xs">
                             <span class="font-bold block text-slate-800">760 × 420</span>
-                            <span class="text-slate-400">文章Banner</span>
+                            <span class="text-slate-400">文章 Banner</span>
                         </button>
-                        <button type="button" onclick="setPresetCanvas(1200, 630)" class="text-left p-2 rounded-xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition text-xs">
+                        <button type="button" data-preset="1200x630" class="preset-btn text-left p-2 rounded-xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition text-xs">
                             <span class="font-bold block text-slate-800">1200 × 630</span>
                             <span class="text-slate-400">社群分享</span>
                         </button>
-                        <button type="button" onclick="setPresetCanvas(1080, 1080)" class="text-left p-2 rounded-xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition text-xs">
+                        <button type="button" data-preset="1080x1080" class="preset-btn text-left p-2 rounded-xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition text-xs">
                             <span class="font-bold block text-slate-800">1080 × 1080</span>
                             <span class="text-slate-400">方形貼文</span>
                         </button>
-                        <button type="button" onclick="setPresetCanvas(1920, 1080)" class="text-left p-2 rounded-xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition text-xs">
+                        <button type="button" data-preset="1920x1080" class="preset-btn text-left p-2 rounded-xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition text-xs">
                             <span class="font-bold block text-slate-800">1920 × 1080</span>
                             <span class="text-slate-400">Full HD</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Custom Width & Height Inputs -->
+                <!-- Custom Width & Height -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">畫布寬度 (px)</label>
+                        <label for="canvasWidth" class="block text-xs font-semibold text-slate-700 mb-1">畫布寬度 (px)</label>
                         <input type="number" id="canvasWidth" value="760" min="100" max="4000" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">畫布高度 (px)</label>
+                        <label for="canvasHeight" class="block text-xs font-semibold text-slate-700 mb-1">畫布高度 (px)</label>
                         <input type="number" id="canvasHeight" value="420" min="100" max="4000" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     </div>
                 </div>
+                <p class="text-[11px] text-slate-400 -mt-2">尺寸範圍:100 – 4000 px,超出範圍會自動修正。</p>
 
                 <!-- Background Color & Spacing -->
                 <div class="grid grid-cols-2 gap-3 pt-1">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">背景/白線顏色</label>
+                        <label for="canvasBgColor" class="block text-xs font-semibold text-slate-700 mb-1">背景/白線顏色</label>
                         <div class="flex items-center space-x-2">
                             <input type="color" id="canvasBgColor" value="#ffffff" class="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer p-0.5 bg-white">
                             <span class="text-xs text-slate-500">留白線條色</span>
@@ -92,7 +94,7 @@
                     </div>
                     <div>
                         <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-                            <span>圖片白線間距</span>
+                            <label for="gapRange">圖片白線間距</label>
                             <span id="gapVal">10px</span>
                         </div>
                         <input type="range" id="gapRange" min="0" max="50" value="10" class="w-full accent-indigo-600 cursor-pointer mt-1">
@@ -101,7 +103,7 @@
 
                 <!-- Layout Mode -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">拼貼排版模式</label>
+                    <span class="block text-xs font-semibold text-slate-700 mb-1.5">拼貼排版模式</span>
                     <div class="grid grid-cols-2 gap-2">
                         <label class="flex items-center space-x-2 p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 text-xs font-medium">
                             <input type="radio" name="layoutMode" value="grid" checked class="text-indigo-600 focus:ring-indigo-500">
@@ -117,15 +119,15 @@
 
             <!-- Upload Box -->
             <div id="uploadCard" class="bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 text-center hover:border-indigo-500 transition cursor-pointer shadow-sm relative">
-                <input type="file" id="fileInput" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                <input type="file" id="fileInput" accept="image/*" multiple aria-label="上傳多張圖片" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
                 <div class="bg-indigo-50 text-indigo-600 w-12 h-12 mx-auto rounded-full flex items-center justify-center text-xl mb-3 shadow-inner">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
                 </div>
-                <h3 class="text-sm font-semibold text-slate-900 mb-1">上傳多張圖片（可複選）</h3>
-                <p class="text-xs text-slate-400">支援 PNG, JPG, WEBP 格式</p>
+                <h3 class="text-sm font-semibold text-slate-900 mb-1">上傳多張圖片(可複選或拖放)</h3>
+                <p class="text-xs text-slate-400">支援 PNG, JPG, WEBP, GIF 等瀏覽器可讀取的圖片格式</p>
             </div>
 
-            <!-- Uploaded Images Management List -->
+            <!-- Uploaded Images List -->
             <div id="imageListPanel" class="hidden bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                     <h2 class="text-sm font-bold text-slate-900 flex items-center">
@@ -133,16 +135,14 @@
                     </h2>
                     <button type="button" id="clearAllBtn" class="text-xs text-rose-600 hover:underline">清單全清空</button>
                 </div>
-                
-                <div id="thumbnailContainer" class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-                    <!-- Dynamic Thumbnails inserted here -->
-                </div>
+                <p class="text-[11px] text-slate-400 -mt-2">清單順序 = 網格排列順序;自由模式下越後面的圖片越在上層。</p>
+                <div id="thumbnailContainer" class="space-y-2.5 max-h-64 overflow-y-auto pr-1"></div>
             </div>
 
-            <!-- Export Action -->
+            <!-- Export -->
             <div class="space-y-3 pt-2">
                 <div class="flex items-center justify-between">
-                    <label class="text-xs font-semibold text-slate-700">輸出檔案格式</label>
+                    <label for="exportFormat" class="text-xs font-semibold text-slate-700">輸出檔案格式</label>
                     <select id="exportFormat" class="px-3 py-1.5 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <option value="image/jpeg">JPG (較小檔案)</option>
                         <option value="image/png">PNG (清晰無失真)</option>
@@ -155,14 +155,12 @@
                     <span>下載合成拼貼圖片</span>
                 </button>
             </div>
-
         </div>
 
         <!-- Right Preview Area -->
         <div class="lg:col-span-7">
             <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm min-h-[600px] flex flex-col items-center justify-center relative overflow-hidden">
-                
-                <!-- Placeholder when no images -->
+
                 <div id="previewPlaceholder" class="text-center py-20">
                     <div class="w-20 h-20 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
                         <i class="fa-solid fa-photo-film"></i>
@@ -171,62 +169,162 @@
                     <p class="text-sm text-slate-400">請從左側上傳多張橫式、直式圖片以開始自動網格拼貼或自由排版</p>
                 </div>
 
-                <!-- Canvas / Interactive Area (Hidden initially) -->
                 <div id="canvasContainer" class="hidden flex flex-col items-center w-full">
                     <div class="flex items-center justify-between w-full mb-3 px-2">
-                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">即時拼貼預覽（自由模式可直接拖曳圖片）</span>
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">即時拼貼預覽</span>
                         <span id="dimensionBadge" class="text-xs bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-full"></span>
                     </div>
 
-                    <!-- Interactive Canvas Wrapper -->
-                    <div id="viewportWrapper" class="relative overflow-hidden border-2 border-indigo-200 rounded-xl shadow-inner bg-slate-900/5 cursor-default max-w-full flex items-center justify-center" style="max-height: 650px;">
-                        <canvas id="previewCanvas" class="block max-w-full h-auto shadow-2xl"></canvas>
+                    <div id="viewportWrapper" class="relative border-2 border-indigo-200 rounded-xl shadow-inner bg-slate-900/5 max-w-full flex items-center justify-center overflow-hidden">
+                        <canvas id="previewCanvas" class="block shadow-2xl"></canvas>
                     </div>
-                    <p id="modeTip" class="text-xs text-slate-400 mt-3 text-center">提示：目前為「自動均分網格」模式，會依照您設定的白線間距整齊排列多張直橫式圖片。</p>
+                    <p id="modeTip" class="text-xs text-slate-400 mt-3 text-center"></p>
                 </div>
 
             </div>
         </div>
-
     </main>
 
+    <!-- Toast -->
+    <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg z-50"></div>
+
     <script>
-        // DOM Elements
-        const fileInput = document.getElementById('fileInput');
-        const uploadCard = document.getElementById('uploadCard');
-        const imageListPanel = document.getElementById('imageListPanel');
-        const thumbnailContainer = document.getElementById('thumbnailContainer');
-        const imageCountBadge = document.getElementById('imageCount');
-        const previewPlaceholder = document.getElementById('previewPlaceholder');
-        const canvasContainer = document.getElementById('canvasContainer');
-        const previewCanvas = document.getElementById('previewCanvas');
-        const dimensionBadge = document.getElementById('dimensionBadge');
-        const resetAllBtn = document.getElementById('resetAllBtn');
-        const clearAllBtn = document.getElementById('clearAllBtn');
+    (() => {
+        'use strict';
 
-        const canvasWidthInput = document.getElementById('canvasWidth');
-        const canvasHeightInput = document.getElementById('canvasHeight');
-        const canvasBgColorInput = document.getElementById('canvasBgColor');
-        const gapRange = document.getElementById('gapRange');
-        const gapVal = document.getElementById('gapVal');
-        const modeTip = document.getElementById('modeTip');
-        const exportFormat = document.getElementById('exportFormat');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const wrapper = document.getElementById('viewportWrapper');
+        // ---------- 常數 ----------
+        const MIN_SIZE = 100;
+        const MAX_SIZE = 4000;
+        const MIN_CELL = 20;            // 網格單格最小尺寸,避免間距過大造成負寬高
+        const DEFAULT_W = 760;
+        const DEFAULT_H = 420;
 
+        const TIP_GRID = '提示:目前為「自動均分網格」模式,會依畫布比例自動選擇最佳欄列數,圖片以置中裁切填滿每一格。';
+        const TIP_FREE = '提示:目前為「自由圖層排版」模式。拖曳圖片可移動位置,滑鼠滾輪(或觸控板)可縮放選取的圖片。';
+
+        // ---------- DOM ----------
+        const $ = (id) => document.getElementById(id);
+        const fileInput = $('fileInput');
+        const uploadCard = $('uploadCard');
+        const imageListPanel = $('imageListPanel');
+        const thumbnailContainer = $('thumbnailContainer');
+        const imageCountBadge = $('imageCount');
+        const previewPlaceholder = $('previewPlaceholder');
+        const canvasContainer = $('canvasContainer');
+        const previewCanvas = $('previewCanvas');
+        const dimensionBadge = $('dimensionBadge');
+        const resetAllBtn = $('resetAllBtn');
+        const clearAllBtn = $('clearAllBtn');
+        const canvasWidthInput = $('canvasWidth');
+        const canvasHeightInput = $('canvasHeight');
+        const canvasBgColorInput = $('canvasBgColor');
+        const gapRange = $('gapRange');
+        const gapVal = $('gapVal');
+        const modeTip = $('modeTip');
+        const exportFormat = $('exportFormat');
+        const downloadBtn = $('downloadBtn');
+        const toastEl = $('toast');
+
+        // ---------- 狀態 ----------
+        /** @type {{id:number,url:string,imgObj:HTMLImageElement,name:string,x:number,y:number,w:number,h:number,scale:number}[]} */
         let imageItems = [];
         let selectedIndex = null;
-        let isDragging = false;
+        let nextId = 1;
 
-        // File upload event listener (Supports multiple files)
-        fileInput.addEventListener('change', (e) => {
-            const files = Array.from(e.target.files);
-            if (files.length > 0) {
-                loadFiles(files);
+        // 拖曳狀態
+        let dragIndex = null;
+        let dragPointerId = null;
+        let dragStart = { px: 0, py: 0, ix: 0, iy: 0 };
+
+        // ---------- 工具函式 ----------
+        function showToast(msg) {
+            toastEl.textContent = msg;
+            toastEl.classList.remove('hidden');
+            clearTimeout(showToast._t);
+            showToast._t = setTimeout(() => toastEl.classList.add('hidden'), 3000);
+        }
+
+        function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+
+        function parseSize(value, fallback) {
+            const n = parseInt(value, 10);
+            return clamp(Number.isFinite(n) ? n : fallback, MIN_SIZE, MAX_SIZE);
+        }
+
+        function getCanvasSize() {
+            return {
+                w: parseSize(canvasWidthInput.value, DEFAULT_W),
+                h: parseSize(canvasHeightInput.value, DEFAULT_H)
+            };
+        }
+
+        function getLayoutMode() {
+            const checked = document.querySelector('input[name="layoutMode"]:checked');
+            return checked ? checked.value : 'grid';
+        }
+
+        /** 自由模式下,新加入圖片的初始大小:最多佔畫布 55%,不放大 */
+        function getInitialFit(img) {
+            const { w, h } = getCanvasSize();
+            const fit = Math.min(1, (w * 0.55) / img.naturalWidth, (h * 0.55) / img.naturalHeight);
+            return { w: img.naturalWidth * fit, h: img.naturalHeight * fit };
+        }
+
+        function placeItemInitial(item, order) {
+            const fit = getInitialFit(item.imgObj);
+            item.w = fit.w;
+            item.h = fit.h;
+            item.scale = 1;
+            const { w: cw, h: ch } = getCanvasSize();
+            const offset = (order * 30) % 200;
+            item.x = clamp(20 + offset, 0, Math.max(0, cw - item.w));
+            item.y = clamp(20 + offset, 0, Math.max(0, ch - item.h));
+        }
+
+        // ---------- 檔案載入 ----------
+        function loadOne(file) {
+            return new Promise((resolve) => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => resolve({ file, img, url });
+                img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+                img.src = url;
+            });
+        }
+
+        async function loadFiles(files) {
+            const imageFiles = files.filter((f) => f.type.startsWith('image/'));
+            if (imageFiles.length === 0) {
+                showToast('沒有可用的圖片檔案');
+                return;
             }
+            // Promise.all 會保留原本選取的順序
+            const results = await Promise.all(imageFiles.map(loadOne));
+            let failed = 0;
+            results.forEach((r) => {
+                if (!r) { failed++; return; }
+                const dot = r.file.name.lastIndexOf('.');
+                const item = {
+                    id: nextId++,
+                    url: r.url,
+                    imgObj: r.img,
+                    name: (dot > 0 ? r.file.name.substring(0, dot) : r.file.name) || `image_${imageItems.length + 1}`,
+                    x: 0, y: 0, w: 0, h: 0, scale: 1
+                };
+                placeItemInitial(item, imageItems.length);
+                imageItems.push(item);
+            });
+            if (failed > 0) showToast(`有 ${failed} 個檔案無法讀取,已略過`);
+            onImagesUpdated();
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files || []);
+            if (files.length > 0) loadFiles(files);
+            fileInput.value = '';
         });
 
-        // Drag and drop support on upload card
+        // 拖放上傳
         uploadCard.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadCard.classList.add('border-indigo-500', 'bg-indigo-50/20');
@@ -237,346 +335,389 @@
         });
         uploadCard.addEventListener('drop', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             uploadCard.classList.remove('border-indigo-500', 'bg-indigo-50/20');
-            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-            if (files.length > 0) {
-                loadFiles(files);
-            }
+            const files = Array.from(e.dataTransfer.files || []);
+            if (files.length > 0) loadFiles(files);
         });
+        // 避免圖片被拖到頁面其他位置時,瀏覽器直接開啟該圖片而離開頁面
+        window.addEventListener('dragover', (e) => e.preventDefault());
+        window.addEventListener('drop', (e) => e.preventDefault());
 
-        function loadFiles(files) {
-            let loadedCount = 0;
-            files.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const newItem = {
-                            id: Date.now() + Math.random(),
-                            imgObj: img,
-                            name: file.name.substring(0, file.name.lastIndexOf('.')) || `image_${imageItems.length + 1}`,
-                            x: 20 + (imageItems.length * 30) % 200,
-                            y: 20 + (imageItems.length * 30) % 200,
-                            width: img.width,
-                            height: img.height,
-                            scale: 1
-                        };
-                        imageItems.push(newItem);
-                        loadedCount++;
-
-                        if (loadedCount === files.length) {
-                            onImagesUpdated();
-                        }
-                    };
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-            fileInput.value = '';
-        }
-
+        // ---------- UI 更新 ----------
         function onImagesUpdated() {
-            if (imageItems.length > 0) {
-                imageListPanel.classList.remove('hidden');
-                previewPlaceholder.classList.add('hidden');
-                canvasContainer.classList.remove('hidden');
-                resetAllBtn.classList.remove('hidden');
-                downloadBtn.disabled = false;
-            } else {
-                imageListPanel.classList.add('hidden');
-                previewPlaceholder.classList.remove('hidden');
-                canvasContainer.classList.add('hidden');
-                resetAllBtn.classList.add('hidden');
-                downloadBtn.disabled = true;
-            }
+            const has = imageItems.length > 0;
+            imageListPanel.classList.toggle('hidden', !has);
+            previewPlaceholder.classList.toggle('hidden', has);
+            canvasContainer.classList.toggle('hidden', !has);
+            resetAllBtn.classList.toggle('hidden', !has);
+            downloadBtn.disabled = !has;
             imageCountBadge.textContent = imageItems.length;
             renderThumbnails();
             redrawCanvas();
         }
 
+        function makeIconButton(action, idx, iconClass, title, extraClass) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.dataset.action = action;
+            btn.dataset.idx = String(idx);
+            btn.className = `p-1.5 text-xs ${extraClass}`;
+            btn.title = title;
+            btn.setAttribute('aria-label', title);
+            btn.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+            return btn;
+        }
+
         function renderThumbnails() {
             thumbnailContainer.innerHTML = '';
             imageItems.forEach((item, idx) => {
-                const div = document.createElement('div');
-                div.className = `flex items-center justify-between p-2 rounded-xl border transition bg-white ${selectedIndex === idx ? 'border-indigo-600 bg-indigo-50/30 ring-2 ring-indigo-500/20' : 'border-slate-200 hover:border-slate-300'}`;
-                div.innerHTML = `
-                    <div class="flex items-center space-x-2.5 overflow-hidden cursor-pointer flex-1" onclick="selectItem(${idx})">
-                        <img src="${item.imgObj.src}" class="w-10 h-10 object-cover rounded-lg border border-slate-200 flex-shrink-0">
-                        <div class="overflow-hidden">
-                            <p class="text-xs font-bold text-slate-800 truncate">${item.name}</p>
-                            <p class="text-[10px] text-slate-400">${item.imgObj.width} × ${item.imgObj.height} px</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-1 pl-2">
-                        <button type="button" onclick="moveItemIndex(${idx}, -1)" class="p-1.5 text-slate-400 hover:text-slate-700 text-xs" title="往上一層"><i class="fa-solid fa-arrow-up"></i></button>
-                        <button type="button" onclick="removeItem(${idx})" class="p-1.5 text-rose-400 hover:text-rose-600 text-xs" title="刪除"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                `;
-                thumbnailContainer.appendChild(div);
+                const row = document.createElement('div');
+                const selected = selectedIndex === idx;
+                row.className = 'flex items-center justify-between p-2 rounded-xl border transition ' +
+                    (selected
+                        ? 'border-indigo-600 bg-indigo-50/30 ring-2 ring-indigo-500/20'
+                        : 'border-slate-200 bg-white hover:border-slate-300');
+
+                const left = document.createElement('div');
+                left.className = 'flex items-center space-x-2.5 overflow-hidden cursor-pointer flex-1';
+                left.dataset.action = 'select';
+                left.dataset.idx = String(idx);
+
+                const thumb = document.createElement('img');
+                thumb.src = item.url;
+                thumb.alt = '';
+                thumb.className = 'w-10 h-10 object-cover rounded-lg border border-slate-200 flex-shrink-0';
+
+                const info = document.createElement('div');
+                info.className = 'overflow-hidden';
+                const nameP = document.createElement('p');
+                nameP.className = 'text-xs font-bold text-slate-800 truncate';
+                nameP.textContent = item.name;               // textContent:避免檔名造成 HTML 注入
+                const sizeP = document.createElement('p');
+                sizeP.className = 'text-[10px] text-slate-400';
+                sizeP.textContent = `${item.imgObj.naturalWidth} × ${item.imgObj.naturalHeight} px`;
+                info.append(nameP, sizeP);
+                left.append(thumb, info);
+
+                const right = document.createElement('div');
+                right.className = 'flex items-center space-x-1 pl-2';
+                right.append(
+                    makeIconButton('up', idx, 'fa-arrow-up', '前移一位', 'text-slate-400 hover:text-slate-700'),
+                    makeIconButton('down', idx, 'fa-arrow-down', '後移一位', 'text-slate-400 hover:text-slate-700'),
+                    makeIconButton('remove', idx, 'fa-trash', '刪除', 'text-rose-400 hover:text-rose-600')
+                );
+
+                row.append(left, right);
+                thumbnailContainer.appendChild(row);
             });
         }
 
-        window.selectItem = function(idx) {
+        // 事件委派取代 inline onclick
+        thumbnailContainer.addEventListener('click', (e) => {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+            const idx = parseInt(target.dataset.idx, 10);
+            if (!Number.isInteger(idx) || idx < 0 || idx >= imageItems.length) return;
+            switch (target.dataset.action) {
+                case 'select': selectItem(idx); break;
+                case 'up': moveItem(idx, -1); break;
+                case 'down': moveItem(idx, 1); break;
+                case 'remove': removeItem(idx); break;
+            }
+        });
+
+        function selectItem(idx) {
             selectedIndex = idx;
             renderThumbnails();
             redrawCanvas();
         }
 
-        window.removeItem = function(idx) {
-            imageItems.splice(idx, 1);
+        function removeItem(idx) {
+            const [removed] = imageItems.splice(idx, 1);
+            if (removed) URL.revokeObjectURL(removed.url);   // 釋放記憶體
             if (selectedIndex === idx) selectedIndex = null;
-            else if (selectedIndex > idx) selectedIndex--;
+            else if (selectedIndex !== null && selectedIndex > idx) selectedIndex--;
             onImagesUpdated();
         }
 
-        window.moveItemIndex = function(idx, direction) {
-            const targetIdx = idx + direction;
-            if (targetIdx < 0 || targetIdx >= imageItems.length) return;
-            const temp = imageItems[idx];
-            imageItems[idx] = imageItems[targetIdx];
-            imageItems[targetIdx] = temp;
-            selectedIndex = targetIdx;
+        function moveItem(idx, direction) {
+            const target = idx + direction;
+            if (target < 0 || target >= imageItems.length) return;
+            [imageItems[idx], imageItems[target]] = [imageItems[target], imageItems[idx]];
+            if (selectedIndex === idx) selectedIndex = target;
+            else if (selectedIndex === target) selectedIndex = idx;
             renderThumbnails();
             redrawCanvas();
         }
 
         clearAllBtn.addEventListener('click', () => {
+            imageItems.forEach((item) => URL.revokeObjectURL(item.url));
             imageItems = [];
             selectedIndex = null;
             onImagesUpdated();
         });
 
         resetAllBtn.addEventListener('click', () => {
-            imageItems.forEach((item, idx) => {
-                item.x = 20 + (idx * 30) % 200;
-                item.y = 20 + (idx * 30) % 200;
-                item.scale = 1;
-            });
+            imageItems.forEach((item, idx) => placeItemInitial(item, idx));
             redrawCanvas();
         });
 
-        window.setPresetCanvas = function(w, h) {
-            canvasWidthInput.value = w;
-            canvasHeightInput.value = h;
-            redrawCanvas();
-        }
+        // ---------- 設定控制 ----------
+        document.querySelectorAll('.preset-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const [w, h] = btn.dataset.preset.split('x').map(Number);
+                canvasWidthInput.value = w;
+                canvasHeightInput.value = h;
+                redrawCanvas();
+            });
+        });
 
-        [canvasWidthInput, canvasHeightInput, canvasBgColorInput].forEach(el => {
+        [canvasWidthInput, canvasHeightInput, canvasBgColorInput].forEach((el) => {
             el.addEventListener('input', redrawCanvas);
         });
+        // 離開輸入框時,把超出範圍或空白的值修正回合法數值
+        [canvasWidthInput, canvasHeightInput].forEach((el) => {
+            el.addEventListener('change', () => {
+                const { w, h } = getCanvasSize();
+                canvasWidthInput.value = w;
+                canvasHeightInput.value = h;
+                redrawCanvas();
+            });
+        });
 
-        gapRange.addEventListener('input', (e) => {
-            gapVal.textContent = `${e.target.value}px`;
+        gapRange.addEventListener('input', () => {
+            gapVal.textContent = `${gapRange.value}px`;
             redrawCanvas();
         });
 
-        const layoutModeRadios = document.getElementsByName('layoutMode');
-        if (layoutModeRadios) {
-            layoutModeRadios.forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    if (e.target.value === 'free') {
-                        modeTip.textContent = '提示：目前為「自由圖層排版」模式。您可以直接用滑鼠拖曳畫布上的圖片調整位置。';
-                        wrapper.classList.add('cursor-grab', 'active:cursor-grabbing');
-                    } else {
-                        modeTip.textContent = '提示：目前為「自動均分網格」模式。系統會自動將所有直橫式圖片整齊排列並保留白線間距。';
-                        wrapper.classList.remove('cursor-grab', 'active:cursor-grabbing');
-                    }
-                    redrawCanvas();
+        document.querySelectorAll('input[name="layoutMode"]').forEach((radio) => {
+            radio.addEventListener('change', updateModeUI);
+        });
+
+        function updateModeUI() {
+            const free = getLayoutMode() === 'free';
+            modeTip.textContent = free ? TIP_FREE : TIP_GRID;
+            previewCanvas.classList.toggle('cursor-grab', free);
+            previewCanvas.classList.toggle('active:cursor-grabbing', free);
+            previewCanvas.style.touchAction = free ? 'none' : 'auto';   // 觸控裝置上避免拖曳時頁面跟著捲動
+            redrawCanvas();
+        }
+
+        // ---------- 繪圖 ----------
+        function computeGridLayout(count, W, H, gapReq, aspects) {
+            const avgAspect = aspects.reduce((a, b) => a + b, 0) / count;
+            let best = null;
+
+            for (let cols = 1; cols <= count; cols++) {
+                const rows = Math.ceil(count / cols);
+                // 間距過大時自動縮小,確保每格至少 MIN_CELL
+                const gap = Math.max(0, Math.min(
+                    gapReq,
+                    (W - MIN_CELL * cols) / (cols + 1),
+                    (H - MIN_CELL * rows) / (rows + 1)
+                ));
+                const cellW = (W - gap * (cols + 1)) / cols;
+                const cellH = (H - gap * (rows + 1)) / rows;
+                if (cellW < MIN_CELL || cellH < MIN_CELL) continue;
+
+                const emptyCells = cols * rows - count;
+                // 格子比例越接近圖片平均比例越好(裁切越少),空格越少越好
+                const score = Math.abs(Math.log((cellW / cellH) / avgAspect)) + emptyCells * 0.12;
+                if (!best || score < best.score) best = { cols, rows, gap, cellH, score };
+            }
+
+            if (!best) {
+                const cols = Math.ceil(Math.sqrt(count));
+                const rows = Math.ceil(count / cols);
+                best = { cols, rows, gap: 0, cellH: H / rows, score: 0 };
+            }
+
+            // 逐格計算位置;最後一列若不滿,則把該列的格子拉寬填滿(不留空白格)
+            const cells = [];
+            for (let i = 0; i < count; i++) {
+                const r = Math.floor(i / best.cols);
+                const c = i % best.cols;
+                const inRow = Math.min(best.cols, count - r * best.cols);
+                const cellW = (W - best.gap * (inRow + 1)) / inRow;
+                cells.push({
+                    x: best.gap + c * (cellW + best.gap),
+                    y: best.gap + r * (best.cellH + best.gap),
+                    w: cellW,
+                    h: best.cellH
                 });
+            }
+            return cells;
+        }
+
+        function drawGrid(ctx, W, H, gap) {
+            const aspects = imageItems.map((it) => it.imgObj.naturalWidth / it.imgObj.naturalHeight);
+            const cells = computeGridLayout(imageItems.length, W, H, gap, aspects);
+
+            imageItems.forEach((item, i) => {
+                const cell = cells[i];
+                const iw = item.imgObj.naturalWidth;
+                const ih = item.imgObj.naturalHeight;
+                // cover:用「來源裁切」直接繪製,比 clip 更省效能
+                const scale = Math.max(cell.w / iw, cell.h / ih);
+                const sw = cell.w / scale;
+                const sh = cell.h / scale;
+                const sx = (iw - sw) / 2;
+                const sy = (ih - sh) / 2;
+                ctx.drawImage(item.imgObj, sx, sy, sw, sh, cell.x, cell.y, cell.w, cell.h);
             });
         }
 
-        function getSelectedLayoutMode() {
-            const radios = document.getElementsByName('layoutMode');
-            if (!radios) return 'grid';
-            for (let r of radios) {
-                if (r.checked) return r.value;
+        function drawFree(ctx, showSelection, strokeScale) {
+            imageItems.forEach((item, index) => {
+                const w = item.w * item.scale;
+                const h = item.h * item.scale;
+                ctx.drawImage(item.imgObj, item.x, item.y, w, h);
+
+                if (showSelection && selectedIndex === index) {
+                    ctx.save();
+                    ctx.strokeStyle = '#6366f1';
+                    ctx.lineWidth = 3 * strokeScale;     // 預覽被縮小時,框線仍維持可見粗細
+                    ctx.strokeRect(item.x, item.y, w, h);
+                    ctx.restore();
+                }
+            });
+        }
+
+        /** 統一的繪製流程:預覽與匯出共用,匯出時不畫選取框 */
+        function drawScene(ctx, W, H, { showSelection, strokeScale = 1 }) {
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.fillStyle = canvasBgColorInput.value || '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+            if (imageItems.length === 0) return;
+
+            if (getLayoutMode() === 'grid') {
+                drawGrid(ctx, W, H, parseInt(gapRange.value, 10) || 0);
+            } else {
+                drawFree(ctx, showSelection, strokeScale);
             }
-            return 'grid';
         }
 
         function redrawCanvas() {
-            const canvasW = parseInt(canvasWidthInput.value) || 760;
-            const canvasH = parseInt(canvasHeightInput.value) || 420;
-            const bgColor = canvasBgColorInput.value;
-            const gap = parseInt(gapRange.value) || 0;
-            const layoutMode = getSelectedLayoutMode();
+            const { w, h } = getCanvasSize();
+            dimensionBadge.textContent = `畫布尺寸: ${w} × ${h} px`;
 
-            dimensionBadge.textContent = `畫布尺寸: ${canvasW} × ${canvasH} px`;
+            // 尺寸沒變就不重設 width/height(重設會清空並重新配置畫布,拖曳時很耗效能)
+            if (previewCanvas.width !== w) previewCanvas.width = w;
+            if (previewCanvas.height !== h) previewCanvas.height = h;
 
-            previewCanvas.width = canvasW;
-            previewCanvas.height = canvasH;
-            const ctx = previewCanvas.getContext('2d');
-
-            // Fill background & white spacing lines
-            ctx.fillStyle = bgColor;
-            ctx.fillRect(0, 0, canvasW, canvasH);
-
-            if (imageItems.length === 0) return;
-
-            if (layoutMode === 'grid') {
-                renderGridCollage(ctx, canvasW, canvasH, gap);
-            } else {
-                renderFreeCollage(ctx);
-            }
-        }
-
-        function renderGridCollage(ctx, canvasW, canvasH, gap) {
-            const count = imageItems.length;
-            let cols = Math.ceil(Math.sqrt(count));
-            let rows = Math.ceil(count / cols);
-            if (canvasW < canvasH && count > 1) {
-                cols = Math.floor(Math.sqrt(count));
-                if(cols < 1) cols = 1;
-                rows = Math.ceil(count / cols);
-            }
-
-            const totalGapW = gap * (cols + 1);
-            const totalGapH = gap * (rows + 1);
-
-            const cellW = (canvasW - totalGapW) / cols;
-            const cellH = (canvasH - totalGapH) / rows;
-
-            imageItems.forEach((item, index) => {
-                const c = index % cols;
-                const r = Math.floor(index / cols);
-
-                const x = gap + c * (cellW + gap);
-                const y = gap + r * (cellH + gap);
-
-                const imgW = item.imgObj.width;
-                const imgH = item.imgObj.height;
-                const scale = Math.max(cellW / imgW, cellH / imgH);
-                const renderW = imgW * scale;
-                const renderH = imgH * scale;
-
-                const offsetX = x + (cellW - renderW) / 2;
-                const offsetY = y + (cellH - renderH) / 2;
-
-                ctx.save();
-                ctx.beginPath();
-                ctx.rect(x, y, cellW, cellH);
-                ctx.clip();
-
-                ctx.drawImage(item.imgObj, offsetX, offsetY, renderW, renderH);
-                ctx.restore();
-            });
-        }
-
-        function renderFreeCollage(ctx) {
-            imageItems.forEach((item, index) => {
-                ctx.save();
-                const w = item.width * item.scale;
-                const h = item.height * item.scale;
-                ctx.drawImage(item.imgObj, item.x, item.y, w, h);
-
-                if (selectedIndex === index) {
-                    ctx.strokeStyle = '#6366f1';
-                    ctx.lineWidth = 3;
-                    ctx.strokeRect(item.x, item.y, w, h);
-                }
-                ctx.restore();
-            });
-        }
-
-        let draggedItemIndex = null;
-        let pointerStartX = 0;
-        let pointerStartY = 0;
-        let itemInitialX = 0;
-        let itemInitialY = 0;
-
-        wrapper.addEventListener('mousedown', (e) => {
-            if (getSelectedLayoutMode() !== 'free' || imageItems.length === 0) return;
             const rect = previewCanvas.getBoundingClientRect();
-            const scaleX = previewCanvas.width / rect.width;
-            const scaleY = previewCanvas.height / rect.height;
-            const mouseX = (e.clientX - rect.left) * scaleX;
-            const mouseY = (e.clientY - rect.top) * scaleY;
+            const strokeScale = rect.width > 0 ? w / rect.width : 1;
+            drawScene(previewCanvas.getContext('2d'), w, h, { showSelection: true, strokeScale });
+        }
 
-            draggedItemIndex = null;
+        // ---------- 自由模式:指標事件(滑鼠 + 觸控 + 觸控筆) ----------
+        function toCanvasPoint(e) {
+            const rect = previewCanvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left) * (previewCanvas.width / rect.width),
+                y: (e.clientY - rect.top) * (previewCanvas.height / rect.height)
+            };
+        }
+
+        previewCanvas.addEventListener('pointerdown', (e) => {
+            if (getLayoutMode() !== 'free' || imageItems.length === 0) return;
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+            const p = toCanvasPoint(e);
+            let hit = null;
             for (let i = imageItems.length - 1; i >= 0; i--) {
-                const item = imageItems[i];
-                const w = item.width * item.scale;
-                const h = item.height * item.scale;
-                if (mouseX >= item.x && mouseX <= item.x + w && mouseY >= item.y && mouseY <= item.y + h) {
-                    draggedItemIndex = i;
-                    selectedIndex = i;
+                const it = imageItems[i];
+                if (p.x >= it.x && p.x <= it.x + it.w * it.scale &&
+                    p.y >= it.y && p.y <= it.y + it.h * it.scale) {
+                    hit = i;
                     break;
                 }
             }
 
-            if (draggedItemIndex !== null) {
-                isDragging = true;
-                pointerStartX = mouseX;
-                pointerStartY = mouseY;
-                itemInitialX = imageItems[draggedItemIndex].x;
-                itemInitialY = imageItems[draggedItemIndex].y;
-                renderThumbnails();
-                redrawCanvas();
-            } else {
-                selectedIndex = null;
-                renderThumbnails();
-                redrawCanvas();
+            selectedIndex = hit;
+            if (hit !== null) {
+                dragIndex = hit;
+                dragPointerId = e.pointerId;
+                dragStart = { px: p.x, py: p.y, ix: imageItems[hit].x, iy: imageItems[hit].y };
+                previewCanvas.setPointerCapture(e.pointerId);
             }
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging || draggedItemIndex === null || getSelectedLayoutMode() !== 'free') return;
-            const rect = previewCanvas.getBoundingClientRect();
-            const scaleX = previewCanvas.width / rect.width;
-            const scaleY = previewCanvas.height / rect.height;
-            const mouseX = (e.clientX - rect.left) * scaleX;
-            const mouseY = (e.clientY - rect.top) * scaleY;
-
-            const dx = mouseX - pointerStartX;
-            const dy = mouseY - pointerStartY;
-
-            imageItems[draggedItemIndex].x = itemInitialX + dx;
-            imageItems[draggedItemIndex].y = itemInitialY + dy;
-
+            renderThumbnails();
             redrawCanvas();
         });
 
-        window.addEventListener('mouseup', () => {
-            isDragging = false;
+        previewCanvas.addEventListener('pointermove', (e) => {
+            if (dragIndex === null || e.pointerId !== dragPointerId) return;
+            const item = imageItems[dragIndex];
+            if (!item) return;
+            const p = toCanvasPoint(e);
+            item.x = dragStart.ix + (p.x - dragStart.px);
+            item.y = dragStart.iy + (p.y - dragStart.py);
+            redrawCanvas();
         });
 
-        wrapper.addEventListener('wheel', (e) => {
-            if (getSelectedLayoutMode() !== 'free' || selectedIndex === null || imageItems.length === 0) return;
+        function endDrag(e) {
+            if (e.pointerId !== dragPointerId) return;
+            dragIndex = null;
+            dragPointerId = null;
+        }
+        previewCanvas.addEventListener('pointerup', endDrag);
+        previewCanvas.addEventListener('pointercancel', endDrag);
+
+        // 滾輪縮放:以圖片中心為基準(原本以左上角為基準,圖片會往右下漂移)
+        previewCanvas.addEventListener('wheel', (e) => {
+            if (getLayoutMode() !== 'free' || selectedIndex === null || !imageItems[selectedIndex]) return;
             e.preventDefault();
             const item = imageItems[selectedIndex];
-            const delta = e.deltaY < 0 ? 1.05 : 0.95;
-            item.scale = Math.max(0.1, Math.min(5, item.scale * delta));
+            const oldW = item.w * item.scale;
+            const oldH = item.h * item.scale;
+            item.scale = clamp(item.scale * (e.deltaY < 0 ? 1.05 : 0.95), 0.1, 5);
+            item.x += (oldW - item.w * item.scale) / 2;
+            item.y += (oldH - item.h * item.scale) / 2;
             redrawCanvas();
         }, { passive: false });
 
+        // ---------- 匯出 ----------
         downloadBtn.addEventListener('click', () => {
             if (imageItems.length === 0) return;
 
-            const format = exportFormat.value;
-            let ext = 'jpg';
-            if (format === 'image/png') ext = 'png';
-            if (format === 'image/webp') ext = 'webp';
+            const { w, h } = getCanvasSize();
+            const requested = exportFormat.value;
 
-            const canvasW = canvasWidthInput.value;
-            const canvasH = canvasHeightInput.value;
-            const filename = `collage_${canvasW}x${canvasH}.${ext}`;
+            // 用離屏畫布匯出:不會畫選取框,也不用動到預覽狀態
+            const off = document.createElement('canvas');
+            off.width = w;
+            off.height = h;
+            drawScene(off.getContext('2d'), w, h, { showSelection: false });
 
-            const oldSelected = selectedIndex;
-            selectedIndex = null;
-            redrawCanvas();
+            off.toBlob((blob) => {
+                if (!blob) {
+                    showToast('匯出失敗,請嘗試較小的畫布尺寸或換一種格式');
+                    return;
+                }
+                // 部分瀏覽器不支援 WEBP 編碼會自動退回 PNG,以實際 blob.type 決定副檔名
+                const extMap = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+                const ext = extMap[blob.type] || 'png';
+                if (blob.type !== requested) showToast(`此瀏覽器不支援 ${requested},已改用 ${blob.type}`);
 
-            const dataUrl = previewCanvas.toDataURL(format, 0.92);
-            const link = document.createElement('a');
-            link.download = filename;
-            link.href = dataUrl;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            selectedIndex = oldSelected;
-            redrawCanvas();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = `collage_${w}x${h}.${ext}`;
+                link.href = url;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            }, requested, 0.92);
         });
+
+        // 視窗縮放時重畫(選取框粗細依顯示比例換算)
+        window.addEventListener('resize', () => { if (imageItems.length > 0) redrawCanvas(); });
+
+        // ---------- 初始化 ----------
+        updateModeUI();
+    })();
     </script>
 </body>
 </html>
