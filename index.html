@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多圖拼貼與尺寸排版大師</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md">
+                    <i class="fa-solid fa-shapes text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900">多圖拼貼與尺寸排版大師</h1>
+                    <p class="text-xs text-slate-500">上傳多張圖片、設定目標尺寸、調整間距與白線邊框下載</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="resetAllBtn" class="hidden px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+                    <i class="fa-solid fa-rotate-left mr-1.5"></i>全部重置
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left Sidebar: Controls & Settings -->
+        <div class="lg:col-span-5 space-y-6">
+            
+            <!-- Canvas Settings Panel -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                <h2 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2.5 flex items-center justify-between">
+                    <span><i class="fa-solid fa-sliders text-indigo-600 mr-2"></i>畫布與拼貼設定</span>
+                </h2>
+
+                <!-- Preset Sizes -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">常用尺寸快速套用</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="setPresetCanvas(760, 420)" class="text-left p-2 rounded-xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition text-xs">
+                            <span class="font-bold block text-slate-800">760 × 420</span>
+                            <span class="text-slate-400">文章Banner</span>
+                        </button>
+                        <button type="button" onclick="setPresetCanvas(1200, 630)" class="text-left p-2 rounded-xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition text-xs">
+                            <span class="font-bold block text-slate-800">1200 × 630</span>
+                            <span class="text-slate-400">社群分享</span>
+                        </button>
+                        <button type="button" onclick="setPresetCanvas(1080, 1080)" class="text-left p-2 rounded-xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition text-xs">
+                            <span class="font-bold block text-slate-800">1080 × 1080</span>
+                            <span class="text-slate-400">方形貼文</span>
+                        </button>
+                        <button type="button" onclick="setPresetCanvas(1920, 1080)" class="text-left p-2 rounded-xl border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/50 transition text-xs">
+                            <span class="font-bold block text-slate-800">1920 × 1080</span>
+                            <span class="text-slate-400">Full HD</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Custom Width & Height Inputs -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">畫布寬度 (px)</label>
+                        <input type="number" id="canvasWidth" value="760" min="100" max="4000" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">畫布高度 (px)</label>
+                        <input type="number" id="canvasHeight" value="420" min="100" max="4000" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Background Color & Spacing -->
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">背景/白線顏色</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="color" id="canvasBgColor" value="#ffffff" class="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer p-0.5 bg-white">
+                            <span class="text-xs text-slate-500">留白線條色</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                            <span>圖片白線間距</span>
+                            <span id="gapVal">10px</span>
+                        </div>
+                        <input type="range" id="gapRange" min="0" max="50" value="10" class="w-full accent-indigo-600 cursor-pointer mt-1">
+                    </div>
+                </div>
+
+                <!-- Layout Mode -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">拼貼排版模式</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center space-x-2 p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 text-xs font-medium">
+                            <input type="radio" name="layoutMode" value="grid" checked class="text-indigo-600 focus:ring-indigo-500">
+                            <span>自動均分網格 (含白線)</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 text-xs font-medium">
+                            <input type="radio" name="layoutMode" value="free" class="text-indigo-600 focus:ring-indigo-500">
+                            <span>自由拖曳圖層排版</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Box -->
+            <div id="uploadCard" class="bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 text-center hover:border-indigo-500 transition cursor-pointer shadow-sm relative">
+                <input type="file" id="fileInput" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                <div class="bg-indigo-50 text-indigo-600 w-12 h-12 mx-auto rounded-full flex items-center justify-center text-xl mb-3 shadow-inner">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <h3 class="text-sm font-semibold text-slate-900 mb-1">上傳多張圖片（可複選）</h3>
+                <p class="text-xs text-slate-400">支援 PNG, JPG, WEBP 格式</p>
+            </div>
+
+            <!-- Uploaded Images Management List -->
+            <div id="imageListPanel" class="hidden bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <h2 class="text-sm font-bold text-slate-900 flex items-center">
+                        <i class="fa-solid fa-images text-indigo-600 mr-2"></i>已上傳圖片清單 (<span id="imageCount">0</span>)
+                    </h2>
+                    <button type="button" id="clearAllBtn" class="text-xs text-rose-600 hover:underline">清單全清空</button>
+                </div>
+                
+                <div id="thumbnailContainer" class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                    <!-- Dynamic Thumbnails inserted here -->
+                </div>
+            </div>
+
+            <!-- Export Action -->
+            <div class="space-y-3 pt-2">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-semibold text-slate-700">輸出檔案格式</label>
+                    <select id="exportFormat" class="px-3 py-1.5 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="image/jpeg">JPG (較小檔案)</option>
+                        <option value="image/png">PNG (清晰無失真)</option>
+                        <option value="image/webp">WEBP (現代高效)</option>
+                    </select>
+                </div>
+
+                <button type="button" id="downloadBtn" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fa-solid fa-download"></i>
+                    <span>下載合成拼貼圖片</span>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Right Preview Area -->
+        <div class="lg:col-span-7">
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm min-h-[600px] flex flex-col items-center justify-center relative overflow-hidden">
+                
+                <!-- Placeholder when no images -->
+                <div id="previewPlaceholder" class="text-center py-20">
+                    <div class="w-20 h-20 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                        <i class="fa-solid fa-photo-film"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-slate-700 mb-1">尚未上傳圖片</h3>
+                    <p class="text-sm text-slate-400">請從左側上傳多張橫式、直式圖片以開始自動網格拼貼或自由排版</p>
+                </div>
+
+                <!-- Canvas / Interactive Area (Hidden initially) -->
+                <div id="canvasContainer" class="hidden flex flex-col items-center w-full">
+                    <div class="flex items-center justify-between w-full mb-3 px-2">
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">即時拼貼預覽（自由模式可直接拖曳圖片）</span>
+                        <span id="dimensionBadge" class="text-xs bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-full"></span>
+                    </div>
+
+                    <!-- Interactive Canvas Wrapper -->
+                    <div id="viewportWrapper" class="relative overflow-hidden border-2 border-indigo-200 rounded-xl shadow-inner bg-slate-900/5 cursor-default max-w-full flex items-center justify-center" style="max-height: 650px;">
+                        <canvas id="previewCanvas" class="block max-w-full h-auto shadow-2xl"></canvas>
+                    </div>
+                    <p id="modeTip" class="text-xs text-slate-400 mt-3 text-center">提示：目前為「自動均分網格」模式，會依照您設定的白線間距整齊排列多張直橫式圖片。</p>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // DOM Elements
+        const fileInput = document.getElementById('fileInput');
+        const uploadCard = document.getElementById('uploadCard');
+        const imageListPanel = document.getElementById('imageListPanel');
+        const thumbnailContainer = document.getElementById('thumbnailContainer');
+        const imageCountBadge = document.getElementById('imageCount');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const dimensionBadge = document.getElementById('dimensionBadge');
+        const resetAllBtn = document.getElementById('resetAllBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+
+        const canvasWidthInput = document.getElementById('canvasWidth');
+        const canvasHeightInput = document.getElementById('canvasHeight');
+        const canvasBgColorInput = document.getElementById('canvasBgColor');
+        const gapRange = document.getElementById('gapRange');
+        const gapVal = document.getElementById('gapVal');
+        const modeTip = document.getElementById('modeTip');
+        const exportFormat = document.getElementById('exportFormat');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const wrapper = document.getElementById('viewportWrapper');
+
+        // State variables
+        let imageItems = [];
+        let selectedIndex = null;
+        let isDragging = false;
+
+        // File upload event listener (Supports multiple files)
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                loadFiles(files);
+            }
+        });
+
+        // Drag and drop support on upload card
+        uploadCard.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadCard.classList.add('border-indigo-500', 'bg-indigo-50/20');
+        });
+        uploadCard.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadCard.classList.remove('border-indigo-500', 'bg-indigo-50/20');
+        });
+        uploadCard.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadCard.classList.remove('border-indigo-500', 'bg-indigo-50/20');
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            if (files.length > 0) {
+                loadFiles(files);
+            }
+        });
+
+        function loadFiles(files) {
+            let loadedCount = 0;
+            files.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const newItem = {
+                            id: Date.now() + Math.random(),
+                            imgObj: img,
+                            name: file.name.substring(0, file.name.lastIndexOf('.')) || `image_${imageItems.length + 1}`,
+                            x: 20 + (imageItems.length * 30) % 200,
+                            y: 20 + (imageItems.length * 30) % 200,
+                            width: img.width,
+                            height: img.height,
+                            scale: 1
+                        };
+                        imageItems.push(newItem);
+                        loadedCount++;
+
+                        if (loadedCount === files.length) {
+                            onImagesUpdated();
+                        }
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+            fileInput.value = '';
+        }
+
+        function onImagesUpdated() {
+            if (imageItems.length > 0) {
+                imageListPanel.classList.remove('hidden');
+                previewPlaceholder.classList.add('hidden');
+                canvasContainer.classList.remove('hidden');
+                resetAllBtn.classList.remove('hidden');
+                downloadBtn.disabled = false;
+            } else {
+                imageListPanel.classList.add('hidden');
+                previewPlaceholder.classList.remove('hidden');
+                canvasContainer.classList.add('hidden');
+                resetAllBtn.classList.add('hidden');
+                downloadBtn.disabled = true;
+            }
+            imageCountBadge.textContent = imageItems.length;
+            renderThumbnails();
+            redrawCanvas();
+        }
+
+        function renderThumbnails() {
+            thumbnailContainer.innerHTML = '';
+            imageItems.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between p-2 rounded-xl border transition bg-white ${selectedIndex === idx ? 'border-indigo-600 bg-indigo-50/30 ring-2 ring-indigo-500/20' : 'border-slate-200 hover:border-slate-300'}`;
+                div.innerHTML = `
+                    <div class="flex items-center space-x-2.5 overflow-hidden cursor-pointer flex-1" onclick="selectItem(${idx})">
+                        <img src="${item.imgObj.src}" class="w-10 h-10 object-cover rounded-lg border border-slate-200 flex-shrink-0">
+                        <div class="overflow-hidden">
+                            <p class="text-xs font-bold text-slate-800 truncate">${item.name}</p>
+                            <p class="text-[10px] text-slate-400">${item.imgObj.width} × ${item.imgObj.height} px</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-1 pl-2">
+                        <button type="button" onclick="moveItemIndex(${idx}, -1)" class="p-1.5 text-slate-400 hover:text-slate-700 text-xs" title="往上一層"><i class="fa-solid fa-arrow-up"></i></button>
+                        <button type="button" onclick="removeItem(${idx})" class="p-1.5 text-rose-400 hover:text-rose-600 text-xs" title="刪除"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                thumbnailContainer.appendChild(div);
+            });
+        }
+
+        window.selectItem = function(idx) {
+            selectedIndex = idx;
+            renderThumbnails();
+            redrawCanvas();
+        }
+
+        window.removeItem = function(idx) {
+            imageItems.splice(idx, 1);
+            if (selectedIndex === idx) selectedIndex = null;
+            else if (selectedIndex > idx) selectedIndex--;
+            onImagesUpdated();
+        }
+
+        window.moveItemIndex = function(idx, direction) {
+            const targetIdx = idx + direction;
+            if (targetIdx < 0 || targetIdx >= imageItems.length) return;
+            const temp = imageItems[idx];
+            imageItems[idx] = imageItems[targetIdx];
+            imageItems[targetIdx] = temp;
+            selectedIndex = targetIdx;
+            renderThumbnails();
+            redrawCanvas();
+        }
+
+        clearAllBtn.addEventListener('click', () => {
+            imageItems = [];
+            selectedIndex = null;
+            onImagesUpdated();
+        });
+
+        resetAllBtn.addEventListener('click', () => {
+            imageItems.forEach((item, idx) => {
+                item.x = 20 + (idx * 30) % 200;
+                item.y = 20 + (idx * 30) % 200;
+                item.scale = 1;
+            });
+            redrawCanvas();
+        });
+
+        window.setPresetCanvas = function(w, h) {
+            canvasWidthInput.value = w;
+            canvasHeightInput.value = h;
+            redrawCanvas();
+        }
+
+        [canvasWidthInput, canvasHeightInput, canvasBgColorInput].forEach(el => {
+            el.addEventListener('input', redrawCanvas);
+        });
+
+        gapRange.addEventListener('input', (e) => {
+            gapVal.textContent = `${e.target.value}px`;
+            redrawCanvas();
+        });
+
+        const layoutModeRadios = document.getElementsByName('layoutMode');
+        if (layoutModeRadios) {
+            layoutModeRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.value === 'free') {
+                        modeTip.textContent = '提示：目前為「自由圖層排版」模式。您可以直接用滑鼠拖曳畫布上的圖片調整位置。';
+                        wrapper.classList.add('cursor-grab', 'active:cursor-grabbing');
+                    } else {
+                        modeTip.textContent = '提示：目前為「自動均分網格」模式。系統會自動將所有直橫式圖片整齊排列並保留白線間距。';
+                        wrapper.classList.remove('cursor-grab', 'active:cursor-grabbing');
+                    }
+                    redrawCanvas();
+                });
+            });
+        }
+
+        function getSelectedLayoutMode() {
+            const radios = document.getElementsByName('layoutMode');
+            if (!radios) return 'grid';
+            for (let r of radios) {
+                if (r.checked) return r.value;
+            }
+            return 'grid';
+        }
+
+        function redrawCanvas() {
+            const canvasW = parseInt(canvasWidthInput.value) || 760;
+            const canvasH = parseInt(canvasHeightInput.value) || 420;
+            const bgColor = canvasBgColorInput.value;
+            const gap = parseInt(gapRange.value) || 0;
+            const layoutMode = getSelectedLayoutMode();
+
+            dimensionBadge.textContent = `畫布尺寸: ${canvasW} × ${canvasH} px`;
+
+            previewCanvas.width = canvasW;
+            previewCanvas.height = canvasH;
+            const ctx = previewCanvas.getContext('2d');
+
+            // Fill background & white spacing lines
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvasW, canvasH);
+
+            if (imageItems.length === 0) return;
+
+            if (layoutMode === 'grid') {
+                renderGridCollage(ctx, canvasW, canvasH, gap);
+            } else {
+                renderFreeCollage(ctx);
+            }
+        }
+
+        function renderGridCollage(ctx, canvasW, canvasH, gap) {
+            const count = imageItems.length;
+            let cols = Math.ceil(Math.sqrt(count));
+            let rows = Math.ceil(count / cols);
+            if (canvasW < canvasH && count > 1) {
+                cols = Math.floor(Math.sqrt(count));
+                if(cols < 1) cols = 1;
+                rows = Math.ceil(count / cols);
+            }
+
+            const totalGapW = gap * (cols + 1);
+            const totalGapH = gap * (rows + 1);
+
+            const cellW = (canvasW - totalGapW) / cols;
+            const cellH = (canvasH - totalGapH) / rows;
+
+            imageItems.forEach((item, index) => {
+                const c = index % cols;
+                const r = Math.floor(index / cols);
+
+                const x = gap + c * (cellW + gap);
+                const y = gap + r * (cellH + gap);
+
+                const imgW = item.imgObj.width;
+                const imgH = item.imgObj.height;
+                const scale = Math.max(cellW / imgW, cellH / imgH);
+                const renderW = imgW * scale;
+                const renderH = imgH * scale;
+
+                const offsetX = x + (cellW - renderW) / 2;
+                const offsetY = y + (cellH - renderH) / 2;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(x, y, cellW, cellH);
+                ctx.clip();
+
+                ctx.drawImage(item.imgObj, offsetX, offsetY, renderW, renderH);
+                ctx.restore();
+            });
+        }
+
+        function renderFreeCollage(ctx) {
+            imageItems.forEach((item, index) => {
+                ctx.save();
+                const w = item.width * item.scale;
+                const h = item.height * item.scale;
+                ctx.drawImage(item.imgObj, item.x, item.y, w, h);
+
+                if (selectedIndex === index) {
+                    ctx.strokeStyle = '#6366f1';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(item.x, item.y, w, h);
+                }
+                ctx.restore();
+            });
+        }
+
+        let draggedItemIndex = null;
+        let pointerStartX = 0;
+        let pointerStartY = 0;
+        let itemInitialX = 0;
+        let itemInitialY = 0;
+
+        wrapper.addEventListener('mousedown', (e) => {
+            if (getSelectedLayoutMode() !== 'free' || imageItems.length === 0) return;
+            const rect = previewCanvas.getBoundingClientRect();
+            const scaleX = previewCanvas.width / rect.width;
+            const scaleY = previewCanvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+
+            draggedItemIndex = null;
+            for (let i = imageItems.length - 1; i >= 0; i--) {
+                const item = imageItems[i];
+                const w = item.width * item.scale;
+                const h = item.height * item.scale;
+                if (mouseX >= item.x && mouseX <= item.x + w && mouseY >= item.y && mouseY <= item.y + h) {
+                    draggedItemIndex = i;
+                    selectedIndex = i;
+                    break;
+                }
+            }
+
+            if (draggedItemIndex !== null) {
+                isDragging = true;
+                pointerStartX = mouseX;
+                pointerStartY = mouseY;
+                itemInitialX = imageItems[draggedItemIndex].x;
+                itemInitialY = imageItems[draggedItemIndex].y;
+                renderThumbnails();
+                redrawCanvas();
+            } else {
+                selectedIndex = null;
+                renderThumbnails();
+                redrawCanvas();
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging || draggedItemIndex === null || getSelectedLayoutMode() !== 'free') return;
+            const rect = previewCanvas.getBoundingClientRect();
+            const scaleX = previewCanvas.width / rect.width;
+            const scaleY = previewCanvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+
+            const dx = mouseX - pointerStartX;
+            const dy = mouseY - pointerStartY;
+
+            imageItems[draggedItemIndex].x = itemInitialX + dx;
+            imageItems[draggedItemIndex].y = itemInitialY + dy;
+
+            redrawCanvas();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        wrapper.addEventListener('wheel', (e) => {
+            if (getSelectedLayoutMode() !== 'free' || selectedIndex === null || imageItems.length === 0) return;
+            e.preventDefault();
+            const item = imageItems[selectedIndex];
+            const delta = e.deltaY < 0 ? 1.05 : 0.95;
+            item.scale = Math.max(0.1, Math.min(5, item.scale * delta));
+            redrawCanvas();
+        }, { passive: false });
+
+        downloadBtn.addEventListener('click', () => {
+            if (imageItems.length === 0) return;
+
+            const format = exportFormat.value;
+            let ext = 'jpg';
+            if (format === 'image/png') ext = 'png';
+            if (format === 'image/webp') ext = 'webp';
+
+            const canvasW = canvasWidthInput.value;
+            const canvasH = canvasHeightInput.value;
+            const filename = `collage_${canvasW}x${canvasH}.${ext}`;
+
+            const oldSelected = selectedIndex;
+            selectedIndex = null;
+            redrawCanvas();
+
+            const dataUrl = previewCanvas.toDataURL(format, 0.92);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            selectedIndex = oldSelected;
+            redrawCanvas();
+        });
+    </script>
+</body>
+</html>
