@@ -104,16 +104,11 @@
                 <!-- Layout Mode -->
                 <div>
                     <span class="block text-xs font-semibold text-slate-700 mb-1.5">拼貼排版模式</span>
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="flex items-center space-x-2 p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 text-xs font-medium">
-                            <input type="radio" name="layoutMode" value="grid" checked class="text-indigo-600 focus:ring-indigo-500">
-                            <span>自動均分網格 (含白線)</span>
-                        </label>
-                        <label class="flex items-center space-x-2 p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 text-xs font-medium">
-                            <input type="radio" name="layoutMode" value="free" class="text-indigo-600 focus:ring-indigo-500">
-                            <span>自由拖曳圖層排版</span>
-                        </label>
-                    </div>
+                    <div id="layoutOptions" class="grid grid-cols-2 gap-2"></div>
+                    <button type="button" id="shuffleBtn" class="hidden mt-2 w-full py-2 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition">
+                        <i class="fa-solid fa-shuffle mr-1.5"></i>重新洗牌(換一種馬賽克切法)
+                    </button>
+                    <p id="gapHint" class="hidden text-[11px] text-slate-400 mt-2">自由模式不使用間距設定。</p>
                 </div>
             </div>
 
@@ -199,8 +194,20 @@
         const DEFAULT_W = 760;
         const DEFAULT_H = 420;
 
-        const TIP_GRID = '提示:目前為「自動均分網格」模式,會依畫布比例自動選擇最佳欄列數,圖片以置中裁切填滿每一格。';
-        const TIP_FREE = '提示:目前為「自由圖層排版」模式。拖曳圖片可移動位置,滑鼠滾輪(或觸控板)可縮放選取的圖片。';
+        // 排版樣式清單:要新增樣式時,在這裡加一筆,並在 getCellsForMode() 補上對應演算法即可
+        const LAYOUTS = [
+            { id: 'grid',      label: '自動均分網格', icon: 'fa-table-cells',       tip: '依畫布比例自動選擇最佳欄列數,圖片置中裁切填滿每一格。' },
+            { id: 'justified', label: '等高自動列',   icon: 'fa-bars-staggered',    tip: '每一列等高、依圖片比例分配寬度,裁切最少,類似相簿牆的排法。' },
+            { id: 'row',       label: '單列橫排',     icon: 'fa-grip-lines-vertical', tip: '所有圖片排成一橫列,寬度依圖片比例分配,高度填滿畫布。' },
+            { id: 'col',       label: '單欄直排',     icon: 'fa-grip-lines',        tip: '所有圖片排成一直欄,高度依圖片比例分配,寬度填滿畫布。' },
+            { id: 'mainLeft',  label: '左大右小',     icon: 'fa-table-columns',     tip: '清單第一張為主圖(佔左側約 60%),其餘圖片排在右側。可用清單的箭頭調整誰是主圖。' },
+            { id: 'mainTop',   label: '上大下小',     icon: 'fa-window-maximize',   tip: '清單第一張為主圖(佔上方約 60%),其餘圖片排在下方。可用清單的箭頭調整誰是主圖。' },
+            { id: 'mosaic',    label: '馬賽克拼貼',   icon: 'fa-puzzle-piece',      tip: '把畫布隨機切成大小不一的磁磚,並依圖片比例自動配對最合適的格子(因此不依清單順序)。不滿意可按「重新洗牌」換一種切法。' },
+            { id: 'scatter',   label: '散落相片',     icon: 'fa-images',            tip: '像散落的拍立得相片,帶有白框、陰影與輕微旋轉。「白線間距」滑桿在此模式代表相片白框寬度。' },
+            { id: 'free',      label: '自由拖曳圖層', icon: 'fa-hand',              tip: '拖曳圖片可移動位置,滑鼠滾輪(或觸控板)可縮放選取的圖片。' }
+        ];
+        const LAYOUT_MAP = Object.fromEntries(LAYOUTS.map((l) => [l.id, l]));
+        const MAIN_RATIO = 0.6;         // 「一大多小」主圖佔比
 
         // ---------- DOM ----------
         const $ = (id) => document.getElementById(id);
@@ -230,6 +237,7 @@
         let imageItems = [];
         let selectedIndex = null;
         let nextId = 1;
+        let mosaicSeed = 1;             // 馬賽克切法的種子,按「重新洗牌」會遞增
 
         // 拖曳狀態
         let dragIndex = null;
@@ -491,13 +499,59 @@
             redrawCanvas();
         });
 
-        document.querySelectorAll('input[name="layoutMode"]').forEach((radio) => {
-            radio.addEventListener('change', updateModeUI);
+        function renderLayoutOptions() {
+            const box = $('layoutOptions');
+            box.innerHTML = '';
+            LAYOUTS.forEach((l, i) => {
+                const label = document.createElement('label');
+                label.dataset.layout = l.id;
+                label.className = 'flex items-center space-x-2 p-2.5 border rounded-xl cursor-pointer hover:bg-slate-50 text-xs font-medium';
+
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'layoutMode';
+                input.value = l.id;
+                input.checked = i === 0;
+                input.className = 'text-indigo-600 focus:ring-indigo-500';
+                input.addEventListener('change', updateModeUI);
+
+                const icon = document.createElement('i');
+                icon.className = `fa-solid ${l.icon} text-indigo-500 w-4 text-center`;
+
+                const text = document.createElement('span');
+                text.textContent = l.label;
+
+                label.append(input, icon, text);
+                box.appendChild(label);
+            });
+        }
+        renderLayoutOptions();
+
+        $('shuffleBtn').addEventListener('click', () => {
+            mosaicSeed++;
+            redrawCanvas();
         });
 
         function updateModeUI() {
-            const free = getLayoutMode() === 'free';
-            modeTip.textContent = free ? TIP_FREE : TIP_GRID;
+            const mode = getLayoutMode();
+            const free = mode === 'free';
+            modeTip.textContent = '提示:' + LAYOUT_MAP[mode].tip;
+
+            // 高亮目前選取的樣式
+            $('layoutOptions').querySelectorAll('label').forEach((lb) => {
+                const on = lb.dataset.layout === mode;
+                lb.classList.toggle('border-indigo-600', on);
+                lb.classList.toggle('bg-indigo-50/50', on);
+                lb.classList.toggle('border-slate-200', !on);
+            });
+
+            $('shuffleBtn').classList.toggle('hidden', mode !== 'mosaic');
+
+            // 自由模式不使用間距
+            gapRange.disabled = free;
+            gapRange.classList.toggle('opacity-40', free);
+            $('gapHint').classList.toggle('hidden', !free);
+
             previewCanvas.classList.toggle('cursor-grab', free);
             previewCanvas.classList.toggle('active:cursor-grabbing', free);
             previewCanvas.style.touchAction = free ? 'none' : 'auto';   // 觸控裝置上避免拖曳時頁面跟著捲動
@@ -547,24 +601,272 @@
                     h: best.cellH
                 });
             }
+            cells.gap = best.gap;
             return cells;
         }
 
-        function drawGrid(ctx, W, H, gap) {
-            const aspects = imageItems.map((it) => it.imgObj.naturalWidth / it.imgObj.naturalHeight);
-            const cells = computeGridLayout(imageItems.length, W, H, gap, aspects);
+        // ----- 共用工具 -----
+        const sum = (arr) => arr.reduce((a, b) => a + b, 0);
+        const getAspects = () => imageItems.map((it) => it.imgObj.naturalWidth / it.imgObj.naturalHeight);
+
+        /** 置中裁切填滿(cover):用來源裁切直接繪製,比 clip 更省效能 */
+        function drawCover(ctx, img, x, y, w, h) {
+            const iw = img.naturalWidth;
+            const ih = img.naturalHeight;
+            const scale = Math.max(w / iw, h / ih);
+            const sw = w / scale;
+            const sh = h / scale;
+            ctx.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, x, y, w, h);
+        }
+
+        function drawCells(ctx, cells) {
+            imageItems.forEach((item, i) => {
+                const c = cells[i];
+                if (c) drawCover(ctx, item.imgObj, c.x, c.y, c.w, c.h);
+            });
+        }
+
+        // ----- 單列橫排:寬度依圖片比例分配 -----
+        function computeRowCells(W, H, gapReq, aspects) {
+            const n = aspects.length;
+            const gap = Math.max(0, Math.min(gapReq, (W - MIN_CELL * n) / (n + 1), (H - MIN_CELL) / 2));
+            const availW = W - gap * (n + 1);
+            const total = sum(aspects);
+            let x = gap;
+            return aspects.map((a) => {
+                const w = availW * a / total;
+                const cell = { x, y: gap, w, h: H - gap * 2 };
+                x += w + gap;
+                return cell;
+            });
+        }
+
+        // ----- 單欄直排:高度依圖片比例分配(寬度相同時不裁切的高度 ∝ 1/比例) -----
+        function computeColCells(W, H, gapReq, aspects) {
+            const n = aspects.length;
+            const gap = Math.max(0, Math.min(gapReq, (H - MIN_CELL * n) / (n + 1), (W - MIN_CELL) / 2));
+            const availH = H - gap * (n + 1);
+            const inv = aspects.map((a) => 1 / a);
+            const total = sum(inv);
+            let y = gap;
+            return inv.map((v) => {
+                const h = availH * v / total;
+                const cell = { x: gap, y, w: W - gap * 2, h };
+                y += h + gap;
+                return cell;
+            });
+        }
+
+        // ----- 等高自動列(justified) -----
+        /** 依比例總和把圖片依序分成 k 列,各列比例總和盡量接近 */
+        function partitionRows(aspects, k) {
+            const target = sum(aspects) / k;
+            const rows = [];
+            let cur = [];
+            let curSum = 0;
+            aspects.forEach((a, i) => {
+                cur.push(i);
+                curSum += a;
+                const remainingItems = aspects.length - i - 1;
+                const remainingRows = k - rows.length - 1;
+                if (remainingRows > 0 && remainingItems > 0 &&
+                    (curSum >= target || remainingItems === remainingRows)) {
+                    rows.push(cur);
+                    cur = [];
+                    curSum = 0;
+                }
+            });
+            if (cur.length) rows.push(cur);
+            return rows;
+        }
+
+        function computeJustifiedCells(W, H, gapReq, aspects) {
+            const n = aspects.length;
+            let best = null;
+
+            for (let k = 1; k <= n; k++) {
+                const rows = partitionRows(aspects, k);
+                const kk = rows.length;
+                const maxPerRow = Math.max(...rows.map((r) => r.length));
+                const gap = Math.max(0, Math.min(
+                    gapReq,
+                    (H - MIN_CELL * kk) / (kk + 1),
+                    (W - MIN_CELL * maxPerRow) / (maxPerRow + 1)
+                ));
+                const availH = H - gap * (kk + 1);
+                if (availH < MIN_CELL * kk) continue;
+
+                const info = rows.map((idx) => {
+                    const S = sum(idx.map((i) => aspects[i]));
+                    const availW = W - gap * (idx.length + 1);
+                    return { idx, S, availW, natH: availW / S };    // 不裁切時這一列的自然高度
+                });
+                const totalNat = sum(info.map((r) => r.natH));
+                // 自然總高度越接近可用高度,裁切越少
+                const score = Math.abs(Math.log(totalNat / availH));
+                if (!best || score < best.score) best = { info, gap, availH, totalNat, score };
+            }
+
+            if (!best) return computeGridLayout(n, W, H, gapReq, aspects);
+
+            const cells = new Array(n);
+            let y = best.gap;
+            best.info.forEach((r) => {
+                const rowH = best.availH * r.natH / best.totalNat;
+                let x = best.gap;
+                r.idx.forEach((i) => {
+                    const w = r.availW * aspects[i] / r.S;
+                    cells[i] = { x, y, w, h: rowH };
+                    x += w + best.gap;
+                });
+                y += rowH + best.gap;
+            });
+            return cells;
+        }
+
+        // ----- 一大多小:第一張為主圖,其餘用小網格排在旁邊 -----
+        function computeMainCells(W, H, gapReq, aspects, orientation) {
+            const n = aspects.length;
+            if (n === 1) return computeGridLayout(1, W, H, gapReq, aspects);
+
+            const gap = Math.max(0, Math.min(gapReq, (Math.min(W, H) - MIN_CELL * 2) / 3));
+            let main, rx, ry, rw, rh;
+
+            if (orientation === 'left') {
+                const mw = (W - gap * 3) * MAIN_RATIO;
+                main = { x: gap, y: gap, w: mw, h: H - gap * 2 };
+                rx = gap * 2 + mw; ry = gap;
+                rw = W - rx - gap; rh = H - gap * 2;
+            } else {
+                const mh = (H - gap * 3) * MAIN_RATIO;
+                main = { x: gap, y: gap, w: W - gap * 2, h: mh };
+                rx = gap; ry = gap * 2 + mh;
+                rw = W - gap * 2; rh = H - ry - gap;
+            }
+
+            // 副圖區域:把「含外框間距」的子畫布丟給網格演算法,再平移回實際位置
+            const sub = computeGridLayout(n - 1, rw + gap * 2, rh + gap * 2, gap, aspects.slice(1));
+            const offX = rx - sub.gap;
+            const offY = ry - sub.gap;
+            const rest = sub.map((c) => ({ x: c.x + offX, y: c.y + offY, w: c.w, h: c.h }));
+            return [main, ...rest];
+        }
+
+        // ----- 馬賽克拼貼:遞迴二分切割 + 依比例配對 -----
+        /** 可重現的亂數產生器(同一個 seed 永遠得到同一種切法) */
+        function mulberry32(seed) {
+            let a = seed | 0;
+            return function () {
+                a = (a + 0x6D2B79F5) | 0;
+                let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        /** 把 rect 切成 n 塊;沿較長的邊切,比例帶隨機擾動,格與格之間剛好隔一個 gap */
+        function splitMosaic(rect, n, gap, rng, out) {
+            if (n <= 1) { out.push(rect); return; }
+
+            const a = clamp(Math.round(n * (0.3 + 0.4 * rng())), 1, n - 1);
+            const ratio = clamp((a / n) * (0.85 + 0.3 * rng()), 0.2, 0.8);
+
+            let vertical;                                   // true = 沿寬度切成左右兩塊
+            if (rect.w > rect.h * 1.2) vertical = true;
+            else if (rect.h > rect.w * 1.2) vertical = false;
+            else vertical = rng() < 0.5;
+
+            if (vertical) {
+                const g = Math.min(gap, rect.w * 0.25);     // 極窄的格子縮小間距,避免出現負寬度
+                const avail = rect.w - g;
+                const wA = avail * ratio;
+                splitMosaic({ x: rect.x, y: rect.y, w: wA, h: rect.h }, a, gap, rng, out);
+                splitMosaic({ x: rect.x + wA + g, y: rect.y, w: avail - wA, h: rect.h }, n - a, gap, rng, out);
+            } else {
+                const g = Math.min(gap, rect.h * 0.25);
+                const avail = rect.h - g;
+                const hA = avail * ratio;
+                splitMosaic({ x: rect.x, y: rect.y, w: rect.w, h: hA }, a, gap, rng, out);
+                splitMosaic({ x: rect.x, y: rect.y + hA + g, w: rect.w, h: avail - hA }, n - a, gap, rng, out);
+            }
+        }
+
+        function computeMosaicCells(W, H, gapReq, aspects, seed) {
+            const n = aspects.length;
+            if (n === 1) return computeGridLayout(1, W, H, gapReq, aspects);
+
+            const gap = Math.max(0, Math.min(gapReq, Math.min(W, H) / (2 * n + 2)));
+            const imgOrder = aspects.map((_, i) => i).sort((i, j) => aspects[i] - aspects[j]);
+            let best = null;
+
+            // 以同一個 seed 衍生多組切法,挑「圖片被裁切最少」的那一組
+            for (let t = 0; t < 24; t++) {
+                const rng = mulberry32(seed * 7919 + t * 104729 + 13);
+                const cells = [];
+                splitMosaic({ x: gap, y: gap, w: W - gap * 2, h: H - gap * 2 }, n, gap, rng, cells);
+
+                const cellOrder = cells.map((_, i) => i)
+                    .sort((i, j) => cells[i].w / cells[i].h - cells[j].w / cells[j].h);
+
+                // 格子與圖片都依比例排序後一一配對,總體比例差異最小
+                const assigned = new Array(n);
+                let cost = 0;
+                cellOrder.forEach((ci, k) => {
+                    const ii = imgOrder[k];
+                    const ca = cells[ci].w / cells[ci].h;
+                    assigned[ii] = cells[ci];
+                    cost += Math.abs(Math.log(ca / aspects[ii]));
+                    cost += 0.3 * Math.max(0, Math.abs(Math.log(ca)) - 1.0);   // 過於細長的格子額外扣分
+                });
+                if (!best || cost < best.cost) best = { cost, assigned };
+            }
+            return best.assigned;
+        }
+
+        /** 依樣式回傳每張圖的格子座標 */
+        function getCellsForMode(mode, W, H, gap) {
+            const aspects = getAspects();
+            switch (mode) {
+                case 'justified': return computeJustifiedCells(W, H, gap, aspects);
+                case 'row':       return computeRowCells(W, H, gap, aspects);
+                case 'col':       return computeColCells(W, H, gap, aspects);
+                case 'mainLeft':  return computeMainCells(W, H, gap, aspects, 'left');
+                case 'mainTop':   return computeMainCells(W, H, gap, aspects, 'top');
+                case 'mosaic':    return computeMosaicCells(W, H, gap, aspects, mosaicSeed);
+                case 'grid':
+                default:          return computeGridLayout(aspects.length, W, H, gap, aspects);
+            }
+        }
+
+        // ----- 散落相片:拍立得風格 -----
+        function drawScatter(ctx, W, H, gapReq) {
+            const base = computeGridLayout(imageItems.length, W, H, 0, getAspects());
+            const shadowBlur = Math.max(6, Math.min(W, H) / 60);
 
             imageItems.forEach((item, i) => {
-                const cell = cells[i];
-                const iw = item.imgObj.naturalWidth;
-                const ih = item.imgObj.naturalHeight;
-                // cover:用「來源裁切」直接繪製,比 clip 更省效能
-                const scale = Math.max(cell.w / iw, cell.h / ih);
-                const sw = cell.w / scale;
-                const sh = cell.h / scale;
-                const sx = (iw - sw) / 2;
-                const sy = (ih - sh) / 2;
-                ctx.drawImage(item.imgObj, sx, sy, sw, sh, cell.x, cell.y, cell.w, cell.h);
+                const c = base[i];
+                // 以 item.id 當種子,旋轉與位移固定,重繪時不會亂跳
+                const rot = ((((item.id * 37) % 17) - 8) / 8) * 7 * Math.PI / 180;       // ±7°
+                const jx = ((((item.id * 53) % 11) - 5) / 5) * c.w * 0.05;
+                const jy = ((((item.id * 29) % 13) - 6) / 6) * c.h * 0.05;
+
+                const cw = c.w * 0.9;
+                const ch = c.h * 0.9;
+                const frame = Math.min(Math.max(6, gapReq), Math.min(cw, ch) * 0.15);
+
+                ctx.save();
+                ctx.translate(c.x + c.w / 2 + jx, c.y + c.h / 2 + jy);
+                ctx.rotate(rot);
+
+                ctx.shadowColor = 'rgba(0,0,0,0.30)';
+                ctx.shadowBlur = shadowBlur;
+                ctx.shadowOffsetY = shadowBlur / 3;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(-cw / 2, -ch / 2, cw, ch);
+
+                ctx.shadowColor = 'transparent';
+                drawCover(ctx, item.imgObj, -cw / 2 + frame, -ch / 2 + frame, cw - frame * 2, ch - frame * 2);
+                ctx.restore();
             });
         }
 
@@ -592,10 +894,14 @@
             ctx.fillRect(0, 0, W, H);
             if (imageItems.length === 0) return;
 
-            if (getLayoutMode() === 'grid') {
-                drawGrid(ctx, W, H, parseInt(gapRange.value, 10) || 0);
-            } else {
+            const mode = getLayoutMode();
+            const gap = parseInt(gapRange.value, 10) || 0;
+            if (mode === 'free') {
                 drawFree(ctx, showSelection, strokeScale);
+            } else if (mode === 'scatter') {
+                drawScatter(ctx, W, H, gap);
+            } else {
+                drawCells(ctx, getCellsForMode(mode, W, H, gap));
             }
         }
 
