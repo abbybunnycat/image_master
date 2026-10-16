@@ -29,8 +29,8 @@
                 </div>
             </div>
             <div class="flex items-center space-x-2">
-                <button id="resetAllBtn" type="button" class="hidden px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition" title="自由模式:將所有圖片的位置與大小恢復為初始狀態">
-                    <i class="fa-solid fa-rotate-left mr-1.5"></i>重設排版
+                <button id="resetAllBtn" type="button" class="hidden px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition" title="全部重設:位置微調、互換結果與單張裁剪都會恢復原狀">
+                    <i class="fa-solid fa-rotate-left mr-1.5"></i>全部重設
                 </button>
             </div>
         </div>
@@ -170,10 +170,58 @@
                         <span id="dimensionBadge" class="text-xs bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-full"></span>
                     </div>
 
+                    <!-- 單張調整工具列 -->
+                    <div class="flex items-center justify-center gap-2 w-full mb-3" role="group" aria-label="單張調整工具">
+                        <button type="button" data-tool="move" class="px-4 py-1.5 text-xs font-semibold rounded-lg transition">
+                            <i class="fa-solid fa-up-down-left-right mr-1.5"></i>移動 / 交換
+                        </button>
+                        <button type="button" data-tool="crop" class="px-4 py-1.5 text-xs font-semibold rounded-lg transition">
+                            <i class="fa-solid fa-crop-simple mr-1.5"></i>單張裁剪
+                        </button>
+                    </div>
+
                     <div id="viewportWrapper" class="relative border-2 border-indigo-200 rounded-xl shadow-inner bg-slate-900/5 max-w-full flex items-center justify-center overflow-hidden">
                         <canvas id="previewCanvas" class="block shadow-2xl"></canvas>
                     </div>
                     <p id="modeTip" class="text-xs text-slate-400 mt-3 text-center"></p>
+
+                    <!-- 單張調整面板(點選圖片後出現) -->
+                    <div id="selectionPanel" class="hidden w-full mt-5 pt-4 border-t border-slate-100 space-y-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-bold text-slate-900 truncate">
+                                <i class="fa-solid fa-crop-simple text-indigo-600 mr-2"></i>單張調整:<span id="selName" class="text-indigo-700"></span>
+                            </h3>
+                            <button type="button" id="resetItemBtn" class="shrink-0 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition">重設此張</button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1"><label for="selZoom">裁剪縮放</label><span id="selZoomVal">100%</span></div>
+                                <input type="range" id="selZoom" min="100" max="400" value="100" class="w-full accent-indigo-600 cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1"><label for="selSize">圖框大小</label><span id="selSizeVal">100%</span></div>
+                                <input type="range" id="selSize" min="20" max="300" value="100" class="w-full accent-indigo-600 cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1"><label for="selFx">裁剪水平位置</label><span id="selFxVal">50%</span></div>
+                                <input type="range" id="selFx" min="0" max="100" value="50" class="w-full accent-indigo-600 cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1"><label for="selFy">裁剪垂直位置</label><span id="selFyVal">50%</span></div>
+                                <input type="range" id="selFy" min="0" max="100" value="50" class="w-full accent-indigo-600 cursor-pointer">
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <span class="text-xs font-semibold text-slate-700">位置微調</span>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" data-nudge="-1,0" aria-label="往左" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs"><i class="fa-solid fa-arrow-left"></i></button>
+                                <button type="button" data-nudge="0,-1" aria-label="往上" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs"><i class="fa-solid fa-arrow-up"></i></button>
+                                <button type="button" data-nudge="0,1" aria-label="往下" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs"><i class="fa-solid fa-arrow-down"></i></button>
+                                <button type="button" data-nudge="1,0" aria-label="往右" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs"><i class="fa-solid fa-arrow-right"></i></button>
+                            </div>
+                            <span class="text-[11px] text-slate-400">每次 5px;也可用鍵盤方向鍵(Shift 加速)</span>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -204,7 +252,7 @@
             { id: 'mainTop',   label: '上大下小',     icon: 'fa-window-maximize',   tip: '清單第一張為主圖(佔上方約 60%),其餘圖片排在下方。可用清單的箭頭調整誰是主圖。' },
             { id: 'mosaic',    label: '馬賽克拼貼',   icon: 'fa-puzzle-piece',      tip: '把畫布隨機切成大小不一的磁磚,並依圖片比例自動配對最合適的格子(因此不依清單順序)。不滿意可按「重新洗牌」換一種切法。' },
             { id: 'scatter',   label: '散落相片',     icon: 'fa-images',            tip: '像散落的拍立得相片,帶有白框、陰影與輕微旋轉。「白線間距」滑桿在此模式代表相片白框寬度。' },
-            { id: 'free',      label: '自由拖曳圖層', icon: 'fa-hand',              tip: '拖曳圖片可移動位置,滑鼠滾輪(或觸控板)可縮放選取的圖片。' }
+            { id: 'free',      label: '自由拖曳圖層', icon: 'fa-hand',              tip: '圖片可自由擺放、互相重疊,後面的圖片會蓋在上層。' }
         ];
         const LAYOUT_MAP = Object.fromEntries(LAYOUTS.map((l) => [l.id, l]));
         const MAIN_RATIO = 0.6;         // 「一大多小」主圖佔比
@@ -238,6 +286,13 @@
         let selectedIndex = null;
         let nextId = 1;
         let mosaicSeed = 1;             // 馬賽克切法的種子,按「重新洗牌」會遞增
+        let tool = 'move';              // 目前工具:'move' 移動/交換、'crop' 單張裁剪
+        let cellPerm = [];              // 非自由模式:cellPerm[i] = 第 i 張圖目前使用的格子編號(拖到別格放開會互換)
+        let lastBoxes = [];             // 最近一次預覽繪製時,每張圖的外框(供點選與拖曳判斷)
+        let lastSlots = [];             // 最近一次預覽繪製時,每張圖所在的原始格子(供判斷拖到哪一格)
+        let dropTarget = null;          // 拖曳中,目前懸停的互換目標
+        let lastMode = null;
+        let dragMode = null;
 
         // 拖曳狀態
         let dragIndex = null;
@@ -317,7 +372,9 @@
                     url: r.url,
                     imgObj: r.img,
                     name: (dot > 0 ? r.file.name.substring(0, dot) : r.file.name) || `image_${imageItems.length + 1}`,
-                    x: 0, y: 0, w: 0, h: 0, scale: 1
+                    x: 0, y: 0, w: 0, h: 0, scale: 1,
+                    dx: 0, dy: 0, sc: 1,            // 非自由模式:位置偏移與圖框縮放
+                    zoom: 1, fx: 0.5, fy: 0.5       // 單張裁剪:縮放與裁切焦點(0~1)
                 };
                 placeItemInitial(item, imageItems.length);
                 imageItems.push(item);
@@ -361,7 +418,9 @@
             resetAllBtn.classList.toggle('hidden', !has);
             downloadBtn.disabled = !has;
             imageCountBadge.textContent = imageItems.length;
+            resetPerm();
             renderThumbnails();
+            updateSelectionPanel();
             redrawCanvas();
         }
 
@@ -438,6 +497,7 @@
         function selectItem(idx) {
             selectedIndex = idx;
             renderThumbnails();
+            updateSelectionPanel();
             redrawCanvas();
         }
 
@@ -455,6 +515,7 @@
             [imageItems[idx], imageItems[target]] = [imageItems[target], imageItems[idx]];
             if (selectedIndex === idx) selectedIndex = target;
             else if (selectedIndex === target) selectedIndex = idx;
+            resetPerm();
             renderThumbnails();
             redrawCanvas();
         }
@@ -467,7 +528,12 @@
         });
 
         resetAllBtn.addEventListener('click', () => {
-            imageItems.forEach((item, idx) => placeItemInitial(item, idx));
+            resetLayoutAdjustments();
+            imageItems.forEach((item, idx) => {
+                placeItemInitial(item, idx);
+                resetItemCrop(item);
+            });
+            updateSelectionPanel();
             redrawCanvas();
         });
 
@@ -529,13 +595,17 @@
 
         $('shuffleBtn').addEventListener('click', () => {
             mosaicSeed++;
+            resetLayoutAdjustments();   // 換一種切法後,舊的互換與微調不再適用
             redrawCanvas();
         });
 
         function updateModeUI() {
             const mode = getLayoutMode();
             const free = mode === 'free';
-            modeTip.textContent = '提示:' + LAYOUT_MAP[mode].tip;
+
+            // 換樣式時,位置微調與互換結果歸零(單張裁剪保留,因為它跟圖片內容有關)
+            if (lastMode !== null && lastMode !== mode) resetLayoutAdjustments();
+            lastMode = mode;
 
             // 高亮目前選取的樣式
             $('layoutOptions').querySelectorAll('label').forEach((lb) => {
@@ -552,9 +622,8 @@
             gapRange.classList.toggle('opacity-40', free);
             $('gapHint').classList.toggle('hidden', !free);
 
-            previewCanvas.classList.toggle('cursor-grab', free);
-            previewCanvas.classList.toggle('active:cursor-grabbing', free);
-            previewCanvas.style.touchAction = free ? 'none' : 'auto';   // 觸控裝置上避免拖曳時頁面跟著捲動
+            updateToolUI();
+            updateSelectionPanel();
             redrawCanvas();
         }
 
@@ -610,13 +679,14 @@
         const getAspects = () => imageItems.map((it) => it.imgObj.naturalWidth / it.imgObj.naturalHeight);
 
         /** 置中裁切填滿(cover):用來源裁切直接繪製,比 clip 更省效能 */
-        function drawCover(ctx, img, x, y, w, h) {
+        function drawCover(ctx, img, x, y, w, h, zoom = 1, fx = 0.5, fy = 0.5) {
             const iw = img.naturalWidth;
             const ih = img.naturalHeight;
-            const scale = Math.max(w / iw, h / ih);
+            const scale = Math.max(w / iw, h / ih) * zoom;
             const sw = w / scale;
             const sh = h / scale;
-            ctx.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, x, y, w, h);
+            // fx / fy 為 0~1:0 = 貼齊左/上,1 = 貼齊右/下,0.5 = 置中
+            ctx.drawImage(img, (iw - sw) * fx, (ih - sh) * fy, sw, sh, x, y, w, h);
         }
 
         function drawCells(ctx, cells) {
@@ -838,71 +908,127 @@
             }
         }
 
-        // ----- 散落相片:拍立得風格 -----
-        function drawScatter(ctx, W, H, gapReq) {
-            const base = computeGridLayout(imageItems.length, W, H, 0, getAspects());
+        // ----- 單張調整:位置 / 裁剪 的共用邏輯 -----
+        function ensurePerm() {
+            if (cellPerm.length !== imageItems.length) resetPerm();
+        }
+        function resetPerm() { cellPerm = imageItems.map((_, i) => i); }
+        function resetItemPosition(it) { it.dx = 0; it.dy = 0; it.sc = 1; }
+        function resetItemCrop(it) { it.zoom = 1; it.fx = 0.5; it.fy = 0.5; }
+        function resetLayoutAdjustments() {
+            resetPerm();
+            imageItems.forEach(resetItemPosition);
+        }
+
+        function scatterFrame(b, gapReq) {
+            return Math.min(Math.max(6, gapReq), Math.min(b.w, b.h) * 0.15);
+        }
+
+        /**
+         * 算出每張圖最終的外框 boxes,以及它「原本所在的格子」slots。
+         * 流程:樣式演算法算出格子 → 套用互換 → 套用位置偏移與圖框縮放 → (散落相片)套用旋轉與縮小
+         */
+        function computeBoxes(mode, W, H, gap) {
+            const n = imageItems.length;
+
+            if (mode === 'free') {
+                const boxes = imageItems.map((it) => ({ x: it.x, y: it.y, w: it.w * it.scale, h: it.h * it.scale, rot: 0 }));
+                return { boxes, slots: boxes };
+            }
+
+            ensurePerm();
+            const base = mode === 'scatter'
+                ? computeGridLayout(n, W, H, 0, getAspects())
+                : getCellsForMode(mode, W, H, gap);
+            const slots = imageItems.map((_, i) => base[cellPerm[i]]);
+
+            const boxes = imageItems.map((it, i) => {
+                const c = slots[i];
+                const w = c.w * it.sc;
+                const h = c.h * it.sc;
+                const box = { x: c.x + (c.w - w) / 2 + it.dx, y: c.y + (c.h - h) / 2 + it.dy, w, h, rot: 0 };
+                if (mode !== 'scatter') return box;
+
+                // 散落相片:以 item.id 當種子,旋轉與位移固定,重繪時不會亂跳
+                const rot = ((((it.id * 37) % 17) - 8) / 8) * 7 * Math.PI / 180;       // ±7°
+                const jx = ((((it.id * 53) % 11) - 5) / 5) * box.w * 0.05;
+                const jy = ((((it.id * 29) % 13) - 6) / 6) * box.h * 0.05;
+                const cw = box.w * 0.9;
+                const ch = box.h * 0.9;
+                return { x: box.x + box.w / 2 + jx - cw / 2, y: box.y + box.h / 2 + jy - ch / 2, w: cw, h: ch, rot };
+            });
+            return { boxes, slots };
+        }
+
+        function drawScatter(ctx, boxes, W, H, gapReq) {
             const shadowBlur = Math.max(6, Math.min(W, H) / 60);
-
-            imageItems.forEach((item, i) => {
-                const c = base[i];
-                // 以 item.id 當種子,旋轉與位移固定,重繪時不會亂跳
-                const rot = ((((item.id * 37) % 17) - 8) / 8) * 7 * Math.PI / 180;       // ±7°
-                const jx = ((((item.id * 53) % 11) - 5) / 5) * c.w * 0.05;
-                const jy = ((((item.id * 29) % 13) - 6) / 6) * c.h * 0.05;
-
-                const cw = c.w * 0.9;
-                const ch = c.h * 0.9;
-                const frame = Math.min(Math.max(6, gapReq), Math.min(cw, ch) * 0.15);
+            imageItems.forEach((it, i) => {
+                const b = boxes[i];
+                const frame = scatterFrame(b, gapReq);
 
                 ctx.save();
-                ctx.translate(c.x + c.w / 2 + jx, c.y + c.h / 2 + jy);
-                ctx.rotate(rot);
+                ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
+                ctx.rotate(b.rot);
 
                 ctx.shadowColor = 'rgba(0,0,0,0.30)';
                 ctx.shadowBlur = shadowBlur;
                 ctx.shadowOffsetY = shadowBlur / 3;
                 ctx.fillStyle = '#ffffff';
-                ctx.fillRect(-cw / 2, -ch / 2, cw, ch);
+                ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
 
                 ctx.shadowColor = 'transparent';
-                drawCover(ctx, item.imgObj, -cw / 2 + frame, -ch / 2 + frame, cw - frame * 2, ch - frame * 2);
+                drawCover(ctx, it.imgObj, -b.w / 2 + frame, -b.h / 2 + frame, b.w - frame * 2, b.h - frame * 2, it.zoom, it.fx, it.fy);
                 ctx.restore();
             });
         }
 
-        function drawFree(ctx, showSelection, strokeScale) {
-            imageItems.forEach((item, index) => {
-                const w = item.w * item.scale;
-                const h = item.h * item.scale;
-                ctx.drawImage(item.imgObj, item.x, item.y, w, h);
-
-                if (showSelection && selectedIndex === index) {
-                    ctx.save();
-                    ctx.strokeStyle = '#6366f1';
-                    ctx.lineWidth = 3 * strokeScale;     // 預覽被縮小時,框線仍維持可見粗細
-                    ctx.strokeRect(item.x, item.y, w, h);
-                    ctx.restore();
-                }
-            });
+        /** 預覽專用:選取框與互換目標提示(匯出時不會畫) */
+        function drawOverlay(ctx, boxes, slots, strokeScale) {
+            const b = selectedIndex !== null ? boxes[selectedIndex] : null;
+            if (b) {
+                ctx.save();
+                ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
+                ctx.rotate(b.rot);
+                ctx.strokeStyle = '#6366f1';
+                ctx.lineWidth = 3 * strokeScale;
+                ctx.strokeRect(-b.w / 2, -b.h / 2, b.w, b.h);
+                ctx.restore();
+            }
+            const t = dropTarget !== null ? slots[dropTarget] : null;
+            if (t) {
+                ctx.save();
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 4 * strokeScale;
+                ctx.setLineDash([10 * strokeScale, 6 * strokeScale]);
+                ctx.strokeRect(t.x, t.y, t.w, t.h);
+                ctx.restore();
+            }
         }
 
         /** 統一的繪製流程:預覽與匯出共用,匯出時不畫選取框 */
-        function drawScene(ctx, W, H, { showSelection, strokeScale = 1 }) {
+        function drawScene(ctx, W, H, { showSelection, strokeScale = 1, store = false }) {
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             ctx.fillStyle = canvasBgColorInput.value || '#ffffff';
             ctx.fillRect(0, 0, W, H);
+
+            if (store) { lastBoxes = []; lastSlots = []; }
             if (imageItems.length === 0) return;
 
             const mode = getLayoutMode();
             const gap = parseInt(gapRange.value, 10) || 0;
-            if (mode === 'free') {
-                drawFree(ctx, showSelection, strokeScale);
-            } else if (mode === 'scatter') {
-                drawScatter(ctx, W, H, gap);
+            const { boxes, slots } = computeBoxes(mode, W, H, gap);
+            if (store) { lastBoxes = boxes; lastSlots = slots; }
+
+            if (mode === 'scatter') {
+                drawScatter(ctx, boxes, W, H, gap);
             } else {
-                drawCells(ctx, getCellsForMode(mode, W, H, gap));
+                imageItems.forEach((it, i) => {
+                    const b = boxes[i];
+                    drawCover(ctx, it.imgObj, b.x, b.y, b.w, b.h, it.zoom, it.fx, it.fy);
+                });
             }
+            if (showSelection) drawOverlay(ctx, boxes, slots, strokeScale);
         }
 
         function redrawCanvas() {
@@ -915,10 +1041,109 @@
 
             const rect = previewCanvas.getBoundingClientRect();
             const strokeScale = rect.width > 0 ? w / rect.width : 1;
-            drawScene(previewCanvas.getContext('2d'), w, h, { showSelection: true, strokeScale });
+            drawScene(previewCanvas.getContext('2d'), w, h, { showSelection: true, strokeScale, store: true });
         }
 
-        // ---------- 自由模式:指標事件(滑鼠 + 觸控 + 觸控筆) ----------
+        // ---------- 單張調整:工具、面板 ----------
+        const selPanel = $('selectionPanel');
+        const selUI = {
+            zoom: $('selZoom'), size: $('selSize'), fx: $('selFx'), fy: $('selFy'),
+            zoomVal: $('selZoomVal'), sizeVal: $('selSizeVal'), fxVal: $('selFxVal'), fyVal: $('selFyVal')
+        };
+
+        const getSelected = () => (selectedIndex !== null ? imageItems[selectedIndex] : null);
+        const getItemSize = (it) => (getLayoutMode() === 'free' ? it.scale : it.sc);
+
+        /** 設定圖框大小(以圖框中心為基準縮放,位置不會漂移) */
+        function setItemSize(it, value) {
+            if (getLayoutMode() === 'free') {
+                const ow = it.w * it.scale;
+                const oh = it.h * it.scale;
+                it.scale = clamp(value, 0.1, 5);
+                it.x += (ow - it.w * it.scale) / 2;
+                it.y += (oh - it.h * it.scale) / 2;
+            } else {
+                it.sc = clamp(value, 0.2, 3);
+            }
+        }
+
+        function nudge(it, dx, dy) {
+            if (getLayoutMode() === 'free') { it.x += dx; it.y += dy; }
+            else { it.dx += dx; it.dy += dy; }
+        }
+
+        function updateSelectionPanel() {
+            const it = getSelected();
+            selPanel.classList.toggle('hidden', !it);
+            if (!it) return;
+            $('selName').textContent = it.name;
+            selUI.zoom.value = Math.round(it.zoom * 100);
+            selUI.size.value = Math.round(getItemSize(it) * 100);
+            selUI.fx.value = Math.round(it.fx * 100);
+            selUI.fy.value = Math.round(it.fy * 100);
+            selUI.zoomVal.textContent = `${Math.round(it.zoom * 100)}%`;
+            selUI.sizeVal.textContent = `${Math.round(getItemSize(it) * 100)}%`;
+            selUI.fxVal.textContent = `${Math.round(it.fx * 100)}%`;
+            selUI.fyVal.textContent = `${Math.round(it.fy * 100)}%`;
+        }
+
+        selUI.zoom.addEventListener('input', () => { const it = getSelected(); if (!it) return; it.zoom = clamp(selUI.zoom.value / 100, 1, 4); updateSelectionPanel(); redrawCanvas(); });
+        selUI.fx.addEventListener('input',   () => { const it = getSelected(); if (!it) return; it.fx = clamp(selUI.fx.value / 100, 0, 1); updateSelectionPanel(); redrawCanvas(); });
+        selUI.fy.addEventListener('input',   () => { const it = getSelected(); if (!it) return; it.fy = clamp(selUI.fy.value / 100, 0, 1); updateSelectionPanel(); redrawCanvas(); });
+        selUI.size.addEventListener('input', () => { const it = getSelected(); if (!it) return; setItemSize(it, selUI.size.value / 100); updateSelectionPanel(); redrawCanvas(); });
+
+        $('resetItemBtn').addEventListener('click', () => {
+            const it = getSelected();
+            if (!it) return;
+            resetItemCrop(it);
+            if (getLayoutMode() === 'free') placeItemInitial(it, selectedIndex);
+            else resetItemPosition(it);
+            updateSelectionPanel();
+            redrawCanvas();
+        });
+
+        document.querySelectorAll('[data-nudge]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const it = getSelected();
+                if (!it) return;
+                const [dx, dy] = btn.dataset.nudge.split(',').map(Number);
+                nudge(it, dx * 5, dy * 5);
+                redrawCanvas();
+            });
+        });
+
+        function updateTip() {
+            const mode = getLayoutMode();
+            let toolTip;
+            if (tool === 'crop') toolTip = '【裁剪】在圖片上拖曳可平移裁切範圍,滾輪縮放(放大後才能平移)。';
+            else if (mode === 'free') toolTip = '【移動】拖曳圖片移動位置,滾輪縮放圖框。';
+            else toolTip = '【移動】拖曳可微調位置,拖到另一格上放開可互換;滾輪縮放圖框。';
+            modeTip.textContent = `提示:${LAYOUT_MAP[mode].tip} ${toolTip} 先點選圖片,也可用方向鍵微調(Shift 加速)。`;
+        }
+
+        function updateToolUI() {
+            document.querySelectorAll('[data-tool]').forEach((btn) => {
+                const on = btn.dataset.tool === tool;
+                btn.classList.toggle('bg-indigo-600', on);
+                btn.classList.toggle('text-white', on);
+                btn.classList.toggle('bg-slate-100', !on);
+                btn.classList.toggle('text-slate-600', !on);
+            });
+            previewCanvas.classList.toggle('cursor-grab', tool === 'move');
+            previewCanvas.classList.toggle('active:cursor-grabbing', tool === 'move');
+            previewCanvas.classList.toggle('cursor-move', tool === 'crop');
+            previewCanvas.style.touchAction = 'none';     // 圖片上拖曳時,避免觸控裝置的頁面跟著捲動
+            updateTip();
+        }
+
+        document.querySelectorAll('[data-tool]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                tool = btn.dataset.tool;
+                updateToolUI();
+            });
+        });
+
+        // ---------- 指標事件(滑鼠 + 觸控 + 觸控筆) ----------
         function toCanvasPoint(e) {
             const rect = previewCanvas.getBoundingClientRect();
             return {
@@ -927,62 +1152,149 @@
             };
         }
 
+        /** 把畫布座標的位移,轉成圖片自己座標系的位移(散落相片有旋轉) */
+        function toLocal(dx, dy, rot) {
+            const c = Math.cos(-rot);
+            const s = Math.sin(-rot);
+            return { x: dx * c - dy * s, y: dx * s + dy * c };
+        }
+
+        /** 回傳游標下最上層的圖片編號(含旋轉的相片) */
+        function hitTest(p) {
+            for (let i = lastBoxes.length - 1; i >= 0; i--) {
+                const b = lastBoxes[i];
+                const l = toLocal(p.x - (b.x + b.w / 2), p.y - (b.y + b.h / 2), b.rot);
+                if (Math.abs(l.x) <= b.w / 2 && Math.abs(l.y) <= b.h / 2) return i;
+            }
+            return null;
+        }
+
+        function findDropTarget(cx, cy, self) {
+            for (let j = 0; j < lastSlots.length; j++) {
+                if (j === self) continue;
+                const s = lastSlots[j];
+                if (cx >= s.x && cx <= s.x + s.w && cy >= s.y && cy <= s.y + s.h) return j;
+            }
+            return null;
+        }
+
         previewCanvas.addEventListener('pointerdown', (e) => {
-            if (getLayoutMode() !== 'free' || imageItems.length === 0) return;
+            if (imageItems.length === 0) return;
             if (e.pointerType === 'mouse' && e.button !== 0) return;
 
             const p = toCanvasPoint(e);
-            let hit = null;
-            for (let i = imageItems.length - 1; i >= 0; i--) {
-                const it = imageItems[i];
-                if (p.x >= it.x && p.x <= it.x + it.w * it.scale &&
-                    p.y >= it.y && p.y <= it.y + it.h * it.scale) {
-                    hit = i;
-                    break;
-                }
-            }
-
+            const hit = hitTest(p);
             selectedIndex = hit;
+
             if (hit !== null) {
+                const it = imageItems[hit];
                 dragIndex = hit;
                 dragPointerId = e.pointerId;
-                dragStart = { px: p.x, py: p.y, ix: imageItems[hit].x, iy: imageItems[hit].y };
+                dragMode = tool;
+                dragStart = {
+                    px: p.x, py: p.y,
+                    ix: it.x, iy: it.y, dx: it.dx, dy: it.dy, fx: it.fx, fy: it.fy,
+                    box: lastBoxes[hit]
+                };
                 previewCanvas.setPointerCapture(e.pointerId);
             }
             renderThumbnails();
+            updateSelectionPanel();
             redrawCanvas();
         });
 
         previewCanvas.addEventListener('pointermove', (e) => {
             if (dragIndex === null || e.pointerId !== dragPointerId) return;
-            const item = imageItems[dragIndex];
-            if (!item) return;
+            const it = imageItems[dragIndex];
+            if (!it) return;
+
             const p = toCanvasPoint(e);
-            item.x = dragStart.ix + (p.x - dragStart.px);
-            item.y = dragStart.iy + (p.y - dragStart.py);
+            const dx = p.x - dragStart.px;
+            const dy = p.y - dragStart.py;
+            const mode = getLayoutMode();
+
+            if (dragMode === 'crop') {
+                // 拖曳「圖片內容」:內容往右移 = 裁切焦點往左
+                const b = dragStart.box;
+                const gap = parseInt(gapRange.value, 10) || 0;
+                const f = mode === 'scatter' ? scatterFrame(b, gap) : 0;
+                const innerW = b.w - f * 2;
+                const innerH = b.h - f * 2;
+                const iw = it.imgObj.naturalWidth;
+                const ih = it.imgObj.naturalHeight;
+                const scale = Math.max(innerW / iw, innerH / ih) * it.zoom;
+                const slackX = iw * scale - innerW;          // 可平移的多餘像素
+                const slackY = ih * scale - innerH;
+                const l = toLocal(dx, dy, b.rot);
+                if (slackX > 0.5) it.fx = clamp(dragStart.fx - l.x / slackX, 0, 1);
+                if (slackY > 0.5) it.fy = clamp(dragStart.fy - l.y / slackY, 0, 1);
+            } else if (mode === 'free') {
+                it.x = dragStart.ix + dx;
+                it.y = dragStart.iy + dy;
+            } else {
+                it.dx = dragStart.dx + dx;
+                it.dy = dragStart.dy + dy;
+                const b = dragStart.box;                     // 以拖曳後的外框中心點判斷落在哪一格
+                dropTarget = findDropTarget(b.x + b.w / 2 + dx, b.y + b.h / 2 + dy, dragIndex);
+            }
+            updateSelectionPanel();
             redrawCanvas();
         });
 
-        function endDrag(e) {
+        function endDrag(e, commit) {
             if (e.pointerId !== dragPointerId) return;
+            if (commit && dragMode === 'move' && dropTarget !== null && getLayoutMode() !== 'free') {
+                const i = dragIndex;
+                const j = dropTarget;
+                [cellPerm[i], cellPerm[j]] = [cellPerm[j], cellPerm[i]];
+                resetItemPosition(imageItems[i]);
+                resetItemPosition(imageItems[j]);
+                showToast('已互換位置');
+            }
             dragIndex = null;
             dragPointerId = null;
+            dragMode = null;
+            dropTarget = null;
+            updateSelectionPanel();
+            redrawCanvas();
         }
-        previewCanvas.addEventListener('pointerup', endDrag);
-        previewCanvas.addEventListener('pointercancel', endDrag);
+        previewCanvas.addEventListener('pointerup', (e) => endDrag(e, true));
+        previewCanvas.addEventListener('pointercancel', (e) => endDrag(e, false));
 
-        // 滾輪縮放:以圖片中心為基準(原本以左上角為基準,圖片會往右下漂移)
+        // 滾輪:裁剪工具 = 縮放裁切;移動工具 = 縮放圖框。只在游標位於選取的圖片上才攔截,其餘時候頁面可正常捲動
         previewCanvas.addEventListener('wheel', (e) => {
-            if (getLayoutMode() !== 'free' || selectedIndex === null || !imageItems[selectedIndex]) return;
+            const it = getSelected();
+            if (!it) return;
+            if (hitTest(toCanvasPoint(e)) !== selectedIndex) return;
             e.preventDefault();
-            const item = imageItems[selectedIndex];
-            const oldW = item.w * item.scale;
-            const oldH = item.h * item.scale;
-            item.scale = clamp(item.scale * (e.deltaY < 0 ? 1.05 : 0.95), 0.1, 5);
-            item.x += (oldW - item.w * item.scale) / 2;
-            item.y += (oldH - item.h * item.scale) / 2;
+            const factor = e.deltaY < 0 ? 1.05 : 0.95;
+            if (tool === 'crop') it.zoom = clamp(it.zoom * factor, 1, 4);
+            else setItemSize(it, getItemSize(it) * factor);
+            updateSelectionPanel();
             redrawCanvas();
         }, { passive: false });
+
+        // 鍵盤:方向鍵微調位置(Shift = 10px),Esc 取消選取
+        window.addEventListener('keydown', (e) => {
+            const it = getSelected();
+            if (!it) return;
+            if (e.key === 'Escape') {
+                selectedIndex = null;
+                renderThumbnails();
+                updateSelectionPanel();
+                redrawCanvas();
+                return;
+            }
+            const tag = (e.target && e.target.tagName) || '';
+            if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag)) return;
+            const dirs = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+            const d = dirs[e.key];
+            if (!d) return;
+            e.preventDefault();
+            const step = e.shiftKey ? 10 : 1;
+            nudge(it, d[0] * step, d[1] * step);
+            redrawCanvas();
+        });
 
         // ---------- 匯出 ----------
         downloadBtn.addEventListener('click', () => {
